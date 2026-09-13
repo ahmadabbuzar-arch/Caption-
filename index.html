@@ -379,7 +379,7 @@ select.select-input, input.text-input-full{
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js" crossorigin="anonymous"></script>
 <script>
 /* ============================================================
    Caption Studio — state.js
@@ -1342,13 +1342,23 @@ const CSTranscribe = {
   },
 
   async getFFmpeg() {
-    if (this.ffmpeg) return this.ffmpeg;
+    if (this.ffmpeg) return this.ffmpeg; // only cached once load() has actually succeeded
     const { createFFmpeg } = FFmpeg;
-    this.ffmpeg = createFFmpeg({
+    const instance = createFFmpeg({
       log: false,
       corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
     });
-    await this.ffmpeg.load();
+    try {
+      await instance.load();
+    } catch (err) {
+      // Don't cache a half-initialized instance — otherwise "Try again" would
+      // keep returning the same broken object instead of retrying load().
+      if (typeof SharedArrayBuffer === 'undefined') {
+        throw new Error('this browser tab isn\'t cross-origin isolated, so SharedArrayBuffer is unavailable. This should be fixed by the COOP/COEP headers in vercel.json — redeploy after adding them, then hard-refresh.');
+      }
+      throw err;
+    }
+    this.ffmpeg = instance;
     return this.ffmpeg;
   },
 
