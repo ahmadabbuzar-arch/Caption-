@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>Caption Studio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Poppins:wght@600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@600&display=swap');
+
+:root{
+  --bg: #121218;
+  --surface: #1a1a22;
+  --surface-2: #23232e;
+  --line: #2c2c38;
+  --text: #f1f1f4;
+  --text-dim: #9797a6;
+  --accent: #2fe1c2;
+  --accent-dim: #1f9c88;
+  --accent-2: #ffd166;
+  --danger: #ff5f6d;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Manrope', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x:hidden;
+}
+button{ font-family:inherit; }
+input{ font-family:inherit; }
+
+.screen{ display:none; min-height:100vh; }
+.screen.active{ display:flex; flex-direction:column; }
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  border:none; border-radius:999px; cursor:pointer;
+  font-weight:700; font-size:15px;
+  padding:14px 22px;
+  transition: transform .12s ease, opacity .12s ease;
+}
+.btn:active{ transform: scale(0.96); }
+.btn-primary{ background:var(--accent); color:#0b1613; }
+.btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+.btn-small{ background:var(--surface-2); color:var(--text); padding:8px 14px; font-size:13px; border:1px solid var(--line); }
+.icon-btn{
+  width:40px; height:40px; display:flex; align-items:center; justify-content:center;
+  background:transparent; border:none; color:var(--text); border-radius:50%; cursor:pointer;
+}
+.icon-btn:active{ background:var(--surface-2); }
+
+/* ================= HOME ================= */
+.home-topbar{ padding:20px 20px 0; }
+.logo{ display:flex; align-items:center; gap:10px; }
+.logo-mark{
+  width:34px; height:34px; border-radius:10px; background:var(--accent);
+  color:#0b1613; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center;
+}
+.logo-word{ font-weight:700; font-size:16px; letter-spacing:.2px; }
+
+.home-hero{ padding:44px 24px 8px; }
+.home-hero h1{ font-size:32px; line-height:1.15; margin:0 0 10px; font-weight:800; }
+.hero-sub{ color:var(--text-dim); font-size:15px; margin:0 0 26px; max-width:34ch; }
+.btn-upload{ width:100%; padding:17px; font-size:16px; }
+.hero-hint{ text-align:center; color:var(--text-dim); font-size:12.5px; margin:10px 0 0; }
+
+.projects-section{ padding:34px 20px 40px; margin-top:auto; }
+.projects-section h2{ font-size:14px; color:var(--text-dim); font-weight:700; text-transform:none; margin:0 0 14px; }
+.projects-empty{
+  border:1px dashed var(--line); border-radius:var(--radius); padding:22px; text-align:center;
+}
+.projects-empty p{ margin:0 0 4px; font-weight:700; }
+.projects-empty span{ color:var(--text-dim); font-size:13px; }
+.projects-list{ display:flex; flex-direction:column; gap:10px; }
+.project-card{
+  display:flex; align-items:center; gap:12px; background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--radius); padding:10px; cursor:pointer;
+}
+.project-card:active{ background:var(--surface-2); }
+.project-thumb{
+  width:52px; height:68px; border-radius:8px; background:var(--surface-2); flex-shrink:0;
+  object-fit:cover; display:flex; align-items:center; justify-content:center; color:var(--text-dim);
+}
+.project-meta{ flex:1; min-width:0; }
+.project-meta .pname{ font-weight:700; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.project-meta .pdate{ color:var(--text-dim); font-size:12.5px; }
+.project-delete{ color:var(--text-dim); background:none; border:none; padding:8px; }
+
+/* ================= EDITOR ================= */
+.editor-topbar{
+  display:flex; align-items:center; gap:8px; padding:10px 10px; background:var(--bg);
+  position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line);
+}
+.project-name-input{
+  flex:1; background:transparent; border:none; color:var(--text); font-weight:700; font-size:15px;
+  padding:6px 4px; min-width:0;
+}
+.project-name-input:focus{ outline:none; background:var(--surface); border-radius:8px; }
+.topbar-actions{ display:flex; gap:2px; }
+
+.preview-wrap{ background:#000; padding:10px 10px 6px; }
+.preview-frame{
+  position:relative; width:100%; max-width:420px; margin:0 auto;
+  aspect-ratio: 9/16; background:#000; border-radius:12px; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.preview-frame.ratio-square{ aspect-ratio:1/1; }
+.preview-frame.ratio-landscape{ aspect-ratio:16/9; }
+#video-el{ width:100%; height:100%; object-fit:contain; background:#000; }
+
+.caption-overlay{
+  position:absolute; left:0; right:0; bottom:8%; display:flex; justify-content:center;
+  pointer-events:none; padding:0 6%;
+}
+.caption-overlay.pos-top{ bottom:auto; top:6%; }
+.caption-overlay.pos-middle{ bottom:auto; top:46%; }
+
+.transcribe-overlay{
+  position:absolute; inset:0; background:rgba(10,10,14,.86); display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:14px; color:var(--text); text-align:center; padding:20px;
+}
+.transcribe-overlay.hidden{ display:none; }
+.spinner{
+  width:34px; height:34px; border-radius:50%; border:3px solid var(--surface-2); border-top-color:var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.preview-controls{
+  max-width:420px; margin:10px auto 4px; display:flex; align-items:center; gap:10px; padding:0 4px;
+}
+#scrubber{ flex:1; accent-color:var(--accent); }
+.time-label{ font-size:12px; color:var(--text-dim); font-variant-numeric: tabular-nums; white-space:nowrap; }
+
+.panel-area{ flex:1; background:var(--bg); overflow-y:auto; padding:16px 16px calc(90px + var(--safe-bottom)); }
+.panel{ display:none; }
+.panel.active{ display:block; }
+.panel-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.panel-header h3{ margin:0; font-size:16px; }
+
+/* Captions list */
+.caption-list{ display:flex; flex-direction:column; gap:10px; }
+.caption-item{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:12px;
+}
+.caption-item.editing{ border-color:var(--accent); }
+.caption-item-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.caption-time{ font-size:12px; color:var(--text-dim); font-variant-numeric:tabular-nums; }
+.caption-time-input{
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text); border-radius:6px;
+  font-size:12px; width:64px; padding:3px 5px; font-variant-numeric:tabular-nums;
+}
+.caption-item-actions{ display:flex; gap:4px; }
+.mini-btn{
+  background:var(--surface-2); border:1px solid var(--line); color:var(--text-dim); border-radius:6px;
+  font-size:11px; padding:5px 8px; cursor:pointer;
+}
+.mini-btn.danger{ color:var(--danger); }
+.caption-text-field{
+  width:100%; background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+  border-radius:8px; padding:9px 10px; font-size:14.5px; resize:none; font-family:inherit;
+}
+
+/* Style panel */
+.preset-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.preset-card{
+  background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:12px 6px;
+  text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;
+}
+.preset-card.selected{ border-color:var(--accent); background:var(--surface-2); }
+.preset-preview{ font-size:12.5px; font-weight:700; color:var(--text); }
+.preset-label{ font-size:11px; color:var(--text-dim); }
+
+.control-row{ margin-bottom:16px; }
+.control-row label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:7px; font-weight:600; }
+.swatch-row{ display:flex; gap:8px; flex-wrap:wrap; }
+.swatch{ width:30px; height:30px; border-radius:50%; border:2px solid var(--line); cursor:pointer; }
+.swatch.selected{ border-color:var(--text); box-shadow:0 0 0 2px var(--accent); }
+.seg-control{ display:flex; background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.seg-control button{
+  flex:1; background:none; border:none; color:var(--text-dim); padding:10px 6px; font-size:13px; cursor:pointer; font-weight:600;
+}
+.seg-control button.active{ background:var(--accent); color:#0b1613; }
+input[type=range].slider{ width:100%; accent-color:var(--accent); }
+select.select-input, input.text-input-full{
+  width:100%; background:var(--surface); border:1px solid var(--line); color:var(--text);
+  border-radius:10px; padding:10px 12px; font-size:14px;
+}
+.toggle-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--line); }
+.toggle-row:last-child{ border-bottom:none; }
+.switch{ position:relative; width:44px; height:26px; }
+.switch input{ opacity:0; width:0; height:0; }
+.switch-track{ position:absolute; inset:0; background:var(--surface-2); border:1px solid var(--line); border-radius:999px; transition:.15s; }
+.switch-track::before{ content:""; position:absolute; width:18px; height:18px; left:3px; top:2px; background:var(--text-dim); border-radius:50%; transition:.15s; }
+.switch input:checked + .switch-track{ background:var(--accent-dim); }
+.switch input:checked + .switch-track::before{ transform:translateX(18px); background:#fff; }
+
+/* Bottom tabs */
+.bottom-tabs{
+  position:fixed; left:0; right:0; bottom:0; display:flex; background:var(--surface);
+  border-top:1px solid var(--line); padding:6px 4px calc(6px + var(--safe-bottom)); z-index:30;
+}
+.tab-btn{
+  flex:1; background:none; border:none; color:var(--text-dim); display:flex; flex-direction:column;
+  align-items:center; gap:3px; padding:8px 2px; font-size:11px; cursor:pointer; border-radius:10px;
+}
+.tab-btn.active{ color:var(--accent); }
+
+/* Export */
+.export-area{ text-align:center; padding:20px 8px; }
+.export-hint{ color:var(--text-dim); font-size:13.5px; margin-bottom:22px; }
+.export-progress-wrap{ margin-top:20px; }
+.export-progress-wrap.hidden{ display:none; }
+.export-progress-bar{ height:8px; background:var(--surface); border-radius:999px; overflow:hidden; border:1px solid var(--line); }
+.export-progress-fill{ height:100%; width:0%; background:var(--accent); transition:width .2s; }
+#export-status{ font-size:13px; color:var(--text-dim); margin-top:8px; }
+.export-result{ margin-top:20px; }
+.export-result.hidden{ display:none; }
+.export-result video{ width:100%; max-width:280px; border-radius:12px; }
+.export-result a.btn{ margin-top:14px; width:100%; text-decoration:none; }
+.export-error{ color:var(--danger); font-size:13.5px; margin-top:14px; }
+
+/* Toast */
+.toast{
+  position:fixed; left:50%; bottom:100px; transform:translateX(-50%); background:var(--surface-2);
+  border:1px solid var(--line); color:var(--text); padding:11px 18px; border-radius:999px; font-size:13.5px;
+  z-index:100; box-shadow:0 6px 20px rgba(0,0,0,.4);
+}
+.toast.hidden{ display:none; }
+
+@media (min-width:640px){
+  .home-hero h1{ font-size:38px; }
+  .preview-frame{ max-width:340px; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- ============ HOME SCREEN ============ -->
+<section id="screen-home" class="screen active">
+  <header class="home-topbar">
+    <div class="logo">
+      <span class="logo-mark">CS</span>
+      <span class="logo-word">Caption Studio</span>
+    </div>
+  </header>
+
+  <main class="home-hero">
+    <h1>Turn your videos<br>into captions</h1>
+    <p class="hero-sub">Auto captions, animated text, and creative video styles.</p>
+
+    <label class="btn btn-primary btn-upload">
+      <input type="file" id="file-input" accept="video/mp4,video/quicktime,video/*" hidden />
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+      Upload video
+    </label>
+    <p class="hero-hint">MP4 or MOV, up to 200MB</p>
+  </main>
+
+  <section class="projects-section">
+    <h2>Recent projects</h2>
+    <div id="projects-empty" class="projects-empty">
+      <p>No projects yet.</p>
+      <span>Upload a video to start your first caption project.</span>
+    </div>
+    <div id="projects-list" class="projects-list"></div>
+  </section>
+</section>
+
+<!-- ============ EDITOR SCREEN ============ -->
+<section id="screen-editor" class="screen">
+
+  <header class="editor-topbar">
+    <button id="btn-back" class="icon-btn" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <input id="project-name" class="project-name-input" value="Untitled project" />
+    <div class="topbar-actions">
+      <button id="btn-save" class="icon-btn" aria-label="Save project">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="preview-wrap">
+    <div class="preview-frame" id="preview-frame">
+      <video id="video-el" playsinline></video>
+      <div id="caption-overlay" class="caption-overlay"></div>
+      <div id="transcribe-overlay" class="transcribe-overlay hidden">
+        <div class="spinner"></div>
+        <p id="transcribe-status">Extracting audio…</p>
+      </div>
+    </div>
+    <div class="preview-controls">
+      <button id="btn-play" class="icon-btn" aria-label="Play or pause">
+        <svg id="icon-play" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <svg id="icon-pause" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" style="display:none"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+      </button>
+      <input id="scrubber" type="range" min="0" max="1000" value="0" />
+      <span id="time-label" class="time-label">0:00 / 0:00</span>
+    </div>
+  </div>
+
+  <!-- ===== Panels ===== -->
+  <div class="panel-area">
+
+    <div class="panel active" id="panel-captions">
+      <div class="panel-header">
+        <h3>Captions</h3>
+        <button id="btn-add-caption" class="btn btn-small">+ Add segment</button>
+      </div>
+      <div id="caption-list" class="caption-list"></div>
+    </div>
+
+    <div class="panel" id="panel-style">
+      <div class="panel-header"><h3>Style</h3></div>
+      <div class="preset-grid" id="preset-grid"></div>
+      <div class="style-controls" id="style-controls"></div>
+    </div>
+
+    <div class="panel" id="panel-effects">
+      <div class="panel-header"><h3>Effects</h3></div>
+      <div class="effects-controls" id="effects-controls"></div>
+    </div>
+
+    <div class="panel" id="panel-text">
+      <div class="panel-header"><h3>Text</h3></div>
+      <div class="text-controls" id="text-controls"></div>
+    </div>
+
+    <div class="panel" id="panel-export">
+      <div class="panel-header"><h3>Export</h3></div>
+      <div class="export-area" id="export-area">
+        <p class="export-hint">Renders your video with captions burned in, on your device.</p>
+        <button id="btn-export" class="btn btn-primary">Export video</button>
+        <div id="export-progress-wrap" class="export-progress-wrap hidden">
+          <div class="export-progress-bar"><div id="export-progress-fill" class="export-progress-fill"></div></div>
+          <p id="export-status">Preparing…</p>
+        </div>
+        <div id="export-result" class="export-result hidden"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bottom-tabs">
+    <button class="tab-btn active" data-panel="captions">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h7"/></svg>
+      <span>Captions</span>
+    </button>
+    <button class="tab-btn" data-panel="style">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+      <span>Style</span>
+    </button>
+    <button class="tab-btn" data-panel="effects">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <span>Effects</span>
+    </button>
+    <button class="tab-btn" data-panel="text">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+      <span>Text</span>
+    </button>
+    <button class="tab-btn" data-panel="export">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M12 15l-4-4M12 15l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+      <span>Export</span>
+    </button>
+  </nav>
+
+</section>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+<script>
+/* ============================================================
+   Caption Studio — state.js
+   Local-only persistence: project JSON in localStorage,
+   video blobs in IndexedDB (localStorage can't hold large binaries).
+   No account/server storage is used — everything lives on this device.
+   ============================================================ */
+
+const CS_DB_NAME = 'caption-studio-db';
+const CS_STORE = 'videos';
+const CS_LS_KEY = 'caption-studio-projects';
+
+const CSState = {
+  db: null,
+  current: null, // the active project object while editing
+
+  async initDB() {
+    if (this.db) return this.db;
+    this.db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open(CS_DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(CS_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    return this.db;
+  },
+
+  async saveVideoBlob(projectId, blob) {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(CS_STORE, 'readwrite');
+      tx.objectStore(CS_STORE).put(blob, projectId);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  async loadVideoBlob(projectId) {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(CS_STORE, 'readonly');
+      const req = tx.objectStore(CS_STORE).get(projectId);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  },
+
+  async deleteVideoBlob(projectId) {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(CS_STORE, 'readwrite');
+      tx.objectStore(CS_STORE).delete(projectId);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+
+  listProjects() {
+    try {
+      const raw = localStorage.getItem(CS_LS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error('Failed to read projects', e);
+      return [];
+    }
+  },
+
+  saveProjectMeta(project) {
+    const list = this.listProjects();
+    const idx = list.findIndex(p => p.id === project.id);
+    const entry = {
+      id: project.id,
+      name: project.name,
+      createdAt: project.createdAt,
+      updatedAt: Date.now(),
+      duration: project.videoMeta.duration || 0,
+      aspect: project.videoMeta.aspect || 'portrait',
+      captions: project.captions,
+      style: project.style,
+      effects: project.effects,
+      videoMeta: project.videoMeta
+    };
+    if (idx >= 0) list[idx] = entry; else list.unshift(entry);
+    localStorage.setItem(CS_LS_KEY, JSON.stringify(list));
+  },
+
+  getProjectMeta(id) {
+    return this.listProjects().find(p => p.id === id) || null;
+  },
+
+  deleteProject(id) {
+    const list = this.listProjects().filter(p => p.id !== id);
+    localStorage.setItem(CS_LS_KEY, JSON.stringify(list));
+    this.deleteVideoBlob(id).catch(() => {});
+  },
+
+  newProject(videoMeta) {
+    const id = 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    return {
+      id,
+      name: 'Untitled project',
+      createdAt: Date.now(),
+      videoMeta,
+      captions: [],
+      style: {
+        preset: 'clean',
+        fontFamily: "'Manrope', sans-serif",
+        fontSize: 26,
+        color: '#ffffff',
+        highlightColor: '#2fe1c2',
+        position: 'bottom',
+        align: 'center',
+        background: true,
+        outline: true,
+        animSpeed: 1
+      },
+      effects: {
+        fadeIn: false,
+        fadeOut: false,
+        zoom: false,
+        captionEntrance: 'none',
+        brightness: 100,
+        contrast: 100,
+        captionBlurBg: false
+      }
+    };
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — app.js
+   Screen navigation, home screen, upload, playback controls.
+   ============================================================ */
+
+const CSApp = {
+  els: {},
+  playing: false,
+  scrubbing: false,
+
+  init() {
+    this.els.fileInput = document.getElementById('file-input');
+    this.els.projectsList = document.getElementById('projects-list');
+    this.els.projectsEmpty = document.getElementById('projects-empty');
+    this.els.videoEl = document.getElementById('video-el');
+    this.els.previewFrame = document.getElementById('preview-frame');
+    this.els.btnBack = document.getElementById('btn-back');
+    this.els.btnSave = document.getElementById('btn-save');
+    this.els.projectName = document.getElementById('project-name');
+    this.els.btnPlay = document.getElementById('btn-play');
+    this.els.iconPlay = document.getElementById('icon-play');
+    this.els.iconPause = document.getElementById('icon-pause');
+    this.els.scrubber = document.getElementById('scrubber');
+    this.els.timeLabel = document.getElementById('time-label');
+    this.els.toast = document.getElementById('toast');
+
+    this.els.fileInput.addEventListener('change', (e) => this.handleUpload(e));
+    this.els.btnBack.addEventListener('click', () => this.goHome());
+    this.els.btnSave.addEventListener('click', () => this.saveCurrent(true));
+    this.els.projectName.addEventListener('change', () => this.saveCurrent(false));
+    this.els.btnPlay.addEventListener('click', () => this.togglePlay());
+    this.els.scrubber.addEventListener('input', () => this.onScrub());
+    this.els.scrubber.addEventListener('change', () => { this.scrubbing = false; });
+
+    this.els.videoEl.addEventListener('timeupdate', () => this.onTimeUpdate());
+    this.els.videoEl.addEventListener('loadedmetadata', () => this.onVideoReady());
+    this.els.videoEl.addEventListener('play', () => this.setPlayIcon(true));
+    this.els.videoEl.addEventListener('pause', () => this.setPlayIcon(false));
+    this.els.videoEl.addEventListener('ended', () => this.setPlayIcon(false));
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.switchTab(btn.dataset.panel));
+    });
+
+    this.renderProjectList();
+  },
+
+  toast(msg, ms = 2600) {
+    this.els.toast.textContent = msg;
+    this.els.toast.classList.remove('hidden');
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.els.toast.classList.add('hidden'), ms);
+  },
+
+  // ---------- Home screen ----------
+  renderProjectList() {
+    const list = CSState.listProjects();
+    this.els.projectsList.innerHTML = '';
+    this.els.projectsEmpty.style.display = list.length ? 'none' : 'block';
+    list.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'project-card';
+      const date = new Date(p.updatedAt || p.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      card.innerHTML = `
+        <div class="project-thumb">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </div>
+        <div class="project-meta">
+          <div class="pname"></div>
+          <div class="pdate">${date} · ${(p.captions || []).length} captions</div>
+        </div>
+        <button class="project-delete" aria-label="Delete project">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>
+        </button>`;
+      card.querySelector('.pname').textContent = p.name;
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.project-delete')) return;
+        this.openProject(p.id);
+      });
+      card.querySelector('.project-delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete "${p.name}"? This can't be undone.`)) {
+          CSState.deleteProject(p.id);
+          this.renderProjectList();
+        }
+      });
+      this.els.projectsList.appendChild(card);
+    });
+  },
+
+  // ---------- Upload ----------
+  async handleUpload(e) {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const okType = /video\/(mp4|quicktime|webm|x-m4v)/.test(file.type) || /\.(mp4|mov)$/i.test(file.name);
+    if (!okType) {
+      this.toast('Unsupported file. Please choose an MP4 or MOV video.');
+      return;
+    }
+    const MAX_BYTES = 250 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      this.toast('That video is too large. Please choose a file under 250MB.');
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    const probe = document.createElement('video');
+    probe.preload = 'metadata';
+    probe.src = objectUrl;
+
+    probe.onloadedmetadata = () => {
+      const w = probe.videoWidth, h = probe.videoHeight;
+      let aspect = 'portrait';
+      if (Math.abs(w / h - 1) < 0.05) aspect = 'square';
+      else if (w > h) aspect = 'landscape';
+
+      const project = CSState.newProject({
+        fileName: file.name,
+        duration: probe.duration,
+        width: w, height: h, aspect
+      });
+
+      this.pendingFile = file;
+      CSState.current = project;
+      CSState.saveProjectMeta(project);
+      CSState.saveVideoBlob(project.id, file).catch(err => console.error(err));
+
+      this.renderProjectList();
+      this.openEditor(project, file);
+    };
+    probe.onerror = () => this.toast('Could not read that video file.');
+  },
+
+  // ---------- Editor open/close ----------
+  async openProject(id) {
+    const meta = CSState.getProjectMeta(id);
+    if (!meta) return;
+    const blob = await CSState.loadVideoBlob(id);
+    if (!blob) {
+      this.toast('Original video file is missing from this device.');
+      return;
+    }
+    CSState.current = JSON.parse(JSON.stringify(meta));
+    this.openEditor(CSState.current, blob);
+  },
+
+  openEditor(project, fileOrBlob) {
+    document.getElementById('screen-home').classList.remove('active');
+    document.getElementById('screen-editor').classList.add('active');
+
+    this.els.projectName.value = project.name;
+    const url = URL.createObjectURL(fileOrBlob);
+    this.els.videoEl.src = url;
+
+    this.els.previewFrame.classList.remove('ratio-square', 'ratio-landscape');
+    if (project.videoMeta.aspect === 'square') this.els.previewFrame.classList.add('ratio-square');
+    if (project.videoMeta.aspect === 'landscape') this.els.previewFrame.classList.add('ratio-landscape');
+
+    CSCaptions.render();
+    CSStyles.init();
+    CSEffects.init();
+    this.switchTab('captions');
+
+    // Kick off real transcription if this project has no captions yet
+    if (!project.captions || project.captions.length === 0) {
+      CSTranscribe.run(fileOrBlob);
+    }
+  },
+
+  goHome() {
+    this.saveCurrent(false);
+    if (this.els.videoEl.src) URL.revokeObjectURL(this.els.videoEl.src);
+    this.els.videoEl.pause();
+    this.els.videoEl.removeAttribute('src');
+    this.els.videoEl.load();
+    document.getElementById('screen-editor').classList.remove('active');
+    document.getElementById('screen-home').classList.add('active');
+    this.renderProjectList();
+  },
+
+  saveCurrent(showToast) {
+    if (!CSState.current) return;
+    CSState.current.name = this.els.projectName.value.trim() || 'Untitled project';
+    CSState.saveProjectMeta(CSState.current);
+    if (showToast) this.toast('Project saved');
+  },
+
+  // ---------- Tabs ----------
+  switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.panel === name));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  },
+
+  // ---------- Playback ----------
+  togglePlay() {
+    if (this.els.videoEl.paused) this.els.videoEl.play(); else this.els.videoEl.pause();
+  },
+  setPlayIcon(isPlaying) {
+    this.els.iconPlay.style.display = isPlaying ? 'none' : 'block';
+    this.els.iconPause.style.display = isPlaying ? 'block' : 'none';
+  },
+  onVideoReady() {
+    this.els.scrubber.max = Math.floor(this.els.videoEl.duration * 1000) || 1000;
+    this.updateTimeLabel();
+    if (CSState.current) {
+      CSState.current.videoMeta.duration = this.els.videoEl.duration;
+    }
+  },
+  onTimeUpdate() {
+    if (!this.scrubbing) {
+      this.els.scrubber.value = Math.floor(this.els.videoEl.currentTime * 1000);
+    }
+    this.updateTimeLabel();
+    CSCaptions.updateOverlay(this.els.videoEl.currentTime);
+    CSEffects.applyTimeBasedEffects(this.els.videoEl.currentTime, this.els.videoEl.duration);
+  },
+  onScrub() {
+    this.scrubbing = true;
+    const t = this.els.scrubber.value / 1000;
+    this.els.videoEl.currentTime = t;
+    this.updateTimeLabel();
+  },
+  updateTimeLabel() {
+    const fmt = (s) => {
+      if (!isFinite(s)) return '0:00';
+      const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+      return `${m}:${String(sec).padStart(2, '0')}`;
+    };
+    this.els.timeLabel.textContent = `${fmt(this.els.videoEl.currentTime)} / ${fmt(this.els.videoEl.duration)}`;
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => CSApp.init());
+
+
+/* ============================================================
+   Caption Studio — captions.js
+   Manual caption editing: add, edit, delete, split, merge,
+   retime, and keep the video-preview overlay in sync.
+   ============================================================ */
+
+const CSCaptions = {
+  els: {},
+  lastShownId: null,
+
+  init() {
+    this.els.list = document.getElementById('caption-list');
+    this.els.overlay = document.getElementById('caption-overlay');
+    this.els.addBtn = document.getElementById('btn-add-caption');
+    this.els.addBtn.addEventListener('click', () => this.addSegment());
+  },
+
+  segments() {
+    return CSState.current.captions;
+  },
+
+  fmt(t) {
+    const m = Math.floor(t / 60);
+    const s = (t % 60).toFixed(2).padStart(5, '0');
+    return `${m}:${s}`;
+  },
+
+  setFromTranscript(segments) {
+    CSState.current.captions = segments.map((s, i) => ({
+      id: 'cap_' + Date.now() + '_' + i,
+      start: s.start,
+      end: s.end,
+      text: s.text.trim()
+    }));
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  render() {
+    if (!this.els.list) this.init();
+    const list = this.segments();
+    this.els.list.innerHTML = '';
+    if (!list.length) {
+      const empty = document.createElement('p');
+      empty.style.color = 'var(--text-dim)';
+      empty.style.fontSize = '13.5px';
+      empty.textContent = 'No captions yet. They will appear here once transcription finishes, or add one manually.';
+      this.els.list.appendChild(empty);
+      return;
+    }
+    list.sort((a, b) => a.start - b.start);
+    list.forEach((seg, idx) => this.els.list.appendChild(this.buildRow(seg, idx)));
+  },
+
+  buildRow(seg, idx) {
+    const row = document.createElement('div');
+    row.className = 'caption-item';
+    row.dataset.id = seg.id;
+    row.innerHTML = `
+      <div class="caption-item-top">
+        <div>
+          <input class="caption-time-input" data-field="start" value="${this.fmt(seg.start)}" />
+          <span style="color:var(--text-dim)">–</span>
+          <input class="caption-time-input" data-field="end" value="${this.fmt(seg.end)}" />
+        </div>
+        <div class="caption-item-actions">
+          <button class="mini-btn" data-action="split">Split</button>
+          <button class="mini-btn" data-action="merge">Merge ↓</button>
+          <button class="mini-btn danger" data-action="delete">Delete</button>
+        </div>
+      </div>
+      <textarea class="caption-text-field" rows="2" data-field="text">${this.escape(seg.text)}</textarea>
+    `;
+
+    row.querySelector('[data-field="text"]').addEventListener('input', (e) => {
+      seg.text = e.target.value;
+      CSApp.saveCurrent(false);
+      CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
+    });
+    row.querySelectorAll('.caption-time-input').forEach(inp => {
+      inp.addEventListener('change', (e) => this.onTimeEdit(seg, e.target));
+    });
+    row.querySelector('[data-action="split"]').addEventListener('click', () => this.split(seg));
+    row.querySelector('[data-action="merge"]').addEventListener('click', () => this.mergeWithNext(seg));
+    row.querySelector('[data-action="delete"]').addEventListener('click', () => this.delete(seg));
+    return row;
+  },
+
+  escape(s) {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  },
+
+  parseTime(str) {
+    const m = str.match(/^(\d+):(\d+(?:\.\d+)?)$/);
+    if (!m) return null;
+    return parseInt(m[1], 10) * 60 + parseFloat(m[2]);
+  },
+
+  onTimeEdit(seg, input) {
+    const val = this.parseTime(input.value.trim());
+    if (val === null || val < 0) {
+      CSApp.toast('Use the format minutes:seconds, e.g. 1:23.5');
+      this.render();
+      return;
+    }
+    if (input.dataset.field === 'start') {
+      if (val >= seg.end) { CSApp.toast('Start must be before end.'); this.render(); return; }
+      seg.start = val;
+    } else {
+      if (val <= seg.start) { CSApp.toast('End must be after start.'); this.render(); return; }
+      seg.end = val;
+    }
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  addSegment() {
+    const t = CSApp.els.videoEl.currentTime || 0;
+    const dur = CSApp.els.videoEl.duration || t + 2;
+    const seg = {
+      id: 'cap_' + Date.now(),
+      start: t,
+      end: Math.min(t + 2, dur),
+      text: 'New caption'
+    };
+    this.segments().push(seg);
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  split(seg) {
+    const words = seg.text.trim().split(/\s+/);
+    if (words.length < 2) { CSApp.toast('Add more words before splitting this segment.'); return; }
+    const mid = Math.ceil(words.length / 2);
+    const firstText = words.slice(0, mid).join(' ');
+    const secondText = words.slice(mid).join(' ');
+    const midTime = seg.start + (seg.end - seg.start) / 2;
+
+    const second = { id: 'cap_' + Date.now(), start: midTime, end: seg.end, text: secondText };
+    seg.end = midTime;
+    seg.text = firstText;
+    this.segments().push(second);
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  mergeWithNext(seg) {
+    const list = this.segments();
+    const sorted = [...list].sort((a, b) => a.start - b.start);
+    const idx = sorted.findIndex(s => s.id === seg.id);
+    const next = sorted[idx + 1];
+    if (!next) { CSApp.toast('No following segment to merge with.'); return; }
+    seg.end = next.end;
+    seg.text = (seg.text.trim() + ' ' + next.text.trim()).trim();
+    CSState.current.captions = list.filter(s => s.id !== next.id);
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  delete(seg) {
+    CSState.current.captions = this.segments().filter(s => s.id !== seg.id);
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  updateOverlay(t) {
+    const seg = this.segments().find(s => t >= s.start && t <= s.end);
+    if (!seg) {
+      this.els.overlay.innerHTML = '';
+      this.lastShownId = null;
+      return;
+    }
+    if (seg.id !== this.lastShownId) {
+      CSStyles.renderCaptionInto(this.els.overlay, seg, t);
+      this.lastShownId = seg.id;
+    } else {
+      CSStyles.updateAnimatedCaption(this.els.overlay, seg, t);
+    }
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — styles.js
+   Six animated caption presets, each with real per-word or
+   per-character behavior driven by video currentTime, plus
+   customization controls (font, size, color, position, etc).
+   ============================================================ */
+
+const CSStyles = {
+  PRESETS: [
+    { id: 'boldpop',  label: 'Bold Pop' },
+    { id: 'karaoke',  label: 'Karaoke' },
+    { id: 'wordhi',   label: 'Word Highlight' },
+    { id: 'bounce',   label: 'Bounce' },
+    { id: 'clean',    label: 'Clean Minimal' },
+    { id: 'typewriter', label: 'Typewriter' }
+  ],
+
+  COLORS: ['#ffffff', '#2fe1c2', '#ffd166', '#ff5f6d', '#8c7bff', '#0b0b0f'],
+
+  init() {
+    this.buildPresetGrid();
+    this.buildControls();
+    this.applyPositionClass();
+  },
+
+  style() { return CSState.current.style; },
+
+  buildPresetGrid() {
+    const grid = document.getElementById('preset-grid');
+    grid.innerHTML = '';
+    this.PRESETS.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'preset-card' + (this.style().preset === p.id ? ' selected' : '');
+      card.innerHTML = `<span class="preset-preview">${this.miniPreview(p.id)}</span><span class="preset-label">${p.label}</span>`;
+      card.addEventListener('click', () => {
+        this.style().preset = p.id;
+        document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        CSApp.saveCurrent(false);
+        CSCaptions.lastShownId = null; // force rebuild
+        CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
+      });
+      grid.appendChild(card);
+    });
+  },
+
+  miniPreview(id) {
+    return { boldpop: 'Aa', karaoke: 'Aa', wordhi: 'Aa', bounce: 'Aa', clean: 'Aa', typewriter: 'Aa|' }[id];
+  },
+
+  buildControls() {
+    const wrap = document.getElementById('style-controls');
+    const s = this.style();
+    wrap.innerHTML = `
+      <div class="control-row">
+        <label>Font</label>
+        <select class="select-input" id="ctl-font">
+          <option value="'Manrope', sans-serif">Manrope</option>
+          <option value="'Poppins', sans-serif">Poppins</option>
+          <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
+          <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <label>Font size <span id="fs-val"></span></label>
+        <input type="range" class="slider" id="ctl-size" min="16" max="44" step="1">
+      </div>
+      <div class="control-row">
+        <label>Text color</label>
+        <div class="swatch-row" id="ctl-color"></div>
+      </div>
+      <div class="control-row">
+        <label>Highlight color</label>
+        <div class="swatch-row" id="ctl-hicolor"></div>
+      </div>
+      <div class="control-row">
+        <label>Position</label>
+        <div class="seg-control" id="ctl-position">
+          <button data-v="top">Top</button><button data-v="middle">Middle</button><button data-v="bottom">Bottom</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <label>Alignment</label>
+        <div class="seg-control" id="ctl-align">
+          <button data-v="left">Left</button><button data-v="center">Center</button><button data-v="right">Right</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <label>Animation speed <span id="anim-val"></span></label>
+        <input type="range" class="slider" id="ctl-animspeed" min="0.5" max="2" step="0.1">
+      </div>
+      <div class="toggle-row">
+        <span>Background box</span>
+        <label class="switch"><input type="checkbox" id="ctl-bg"><span class="switch-track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>Outline / shadow</span>
+        <label class="switch"><input type="checkbox" id="ctl-outline"><span class="switch-track"></span></label>
+      </div>
+    `;
+
+    document.getElementById('ctl-font').value = s.fontFamily;
+    document.getElementById('ctl-font').addEventListener('change', e => this.set('fontFamily', e.target.value));
+
+    const sizeInput = document.getElementById('ctl-size');
+    sizeInput.value = s.fontSize;
+    document.getElementById('fs-val').textContent = s.fontSize + 'px';
+    sizeInput.addEventListener('input', e => {
+      document.getElementById('fs-val').textContent = e.target.value + 'px';
+      this.set('fontSize', parseInt(e.target.value, 10));
+    });
+
+    const animInput = document.getElementById('ctl-animspeed');
+    animInput.value = s.animSpeed;
+    document.getElementById('anim-val').textContent = s.animSpeed + 'x';
+    animInput.addEventListener('input', e => {
+      document.getElementById('anim-val').textContent = e.target.value + 'x';
+      this.set('animSpeed', parseFloat(e.target.value));
+    });
+
+    this.buildSwatches('ctl-color', 'color');
+    this.buildSwatches('ctl-hicolor', 'highlightColor');
+
+    ['position', 'align'].forEach(field => {
+      const group = document.getElementById('ctl-' + field);
+      group.querySelectorAll('button').forEach(btn => {
+        if (btn.dataset.v === s[field]) btn.classList.add('active');
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.set(field, btn.dataset.v);
+          if (field === 'position') this.applyPositionClass();
+        });
+      });
+    });
+
+    document.getElementById('ctl-bg').checked = s.background;
+    document.getElementById('ctl-bg').addEventListener('change', e => this.set('background', e.target.checked));
+    document.getElementById('ctl-outline').checked = s.outline;
+    document.getElementById('ctl-outline').addEventListener('change', e => this.set('outline', e.target.checked));
+  },
+
+  buildSwatches(containerId, field) {
+    const row = document.getElementById(containerId);
+    row.innerHTML = '';
+    this.COLORS.forEach(c => {
+      const sw = document.createElement('div');
+      sw.className = 'swatch' + (this.style()[field] === c ? ' selected' : '');
+      sw.style.background = c;
+      sw.addEventListener('click', () => {
+        row.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        this.set(field, c);
+      });
+      row.appendChild(sw);
+    });
+  },
+
+  set(field, value) {
+    this.style()[field] = value;
+    CSApp.saveCurrent(false);
+    CSCaptions.lastShownId = null;
+    CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
+  },
+
+  applyPositionClass() {
+    const overlay = document.getElementById('caption-overlay');
+    overlay.classList.remove('pos-top', 'pos-middle');
+    if (this.style().position === 'top') overlay.classList.add('pos-top');
+    if (this.style().position === 'middle') overlay.classList.add('pos-middle');
+  },
+
+  boxStyleAttr() {
+    const s = this.style();
+    const bg = s.background ? 'background:rgba(10,10,14,.68); padding:8px 14px; border-radius:8px;' : '';
+    const shadow = s.outline ? 'text-shadow:0 2px 6px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9);' : '';
+    return `font-family:${s.fontFamily}; font-size:${s.fontSize}px; color:${s.color}; text-align:${s.align}; justify-content:${{left:'flex-start',center:'center',right:'flex-end'}[s.align]}; ${bg} ${shadow}`;
+  },
+
+  // Build the caption box fresh for a newly-shown segment
+  renderCaptionInto(container, seg, t) {
+    const s = this.style();
+    const words = seg.text.trim().split(/\s+/).filter(Boolean);
+    container.innerHTML = `<div class="cap-box preset-${s.preset}" style="display:inline-flex; flex-wrap:wrap; gap:.35em; ${this.boxStyleAttr()}"></div>`;
+    const box = container.querySelector('.cap-box');
+
+    words.forEach((w, i) => {
+      const span = document.createElement('span');
+      span.className = 'cap-word';
+      span.textContent = w;
+      span.dataset.idx = i;
+      if (s.preset === 'bounce') {
+        span.style.display = 'inline-block';
+        span.style.animation = `csBounceIn .5s ${(0.5 / s.animSpeed) * i}s both`;
+      }
+      if (s.preset === 'boldpop') {
+        span.style.fontWeight = '800';
+      }
+      box.appendChild(span);
+    });
+
+    if (s.preset === 'boldpop') {
+      box.style.animation = `csPopIn ${0.35 / s.animSpeed}s ease both`;
+    }
+    if (s.preset === 'typewriter') {
+      box.dataset.fullText = seg.text.trim();
+      box.innerHTML = '';
+    }
+
+    this.injectKeyframesOnce();
+    this.updateAnimatedCaption(container, seg, t);
+  },
+
+  // Update progressive states (karaoke fill, word highlight, typewriter chars) every frame
+  updateAnimatedCaption(container, seg, t) {
+    const s = this.style();
+    const box = container.querySelector('.cap-box');
+    if (!box) return;
+    const progress = Math.min(1, Math.max(0, (t - seg.start) / Math.max(0.01, seg.end - seg.start)));
+
+    if (s.preset === 'karaoke') {
+      const words = box.querySelectorAll('.cap-word');
+      const n = words.length;
+      words.forEach((w, i) => {
+        const wordProgress = Math.min(1, Math.max(0, progress * n - i));
+        w.style.background = wordProgress > 0
+          ? `linear-gradient(90deg, ${s.highlightColor} ${wordProgress * 100}%, transparent ${wordProgress * 100}%)`
+          : 'none';
+        w.style.borderRadius = '3px';
+        w.style.padding = '0 2px';
+      });
+    } else if (s.preset === 'wordhi') {
+      const words = box.querySelectorAll('.cap-word');
+      const activeIdx = Math.min(words.length - 1, Math.floor(progress * words.length));
+      words.forEach((w, i) => {
+        w.style.background = i === activeIdx ? s.highlightColor : 'transparent';
+        w.style.color = i === activeIdx ? '#0b0b0f' : s.color;
+        w.style.borderRadius = '4px';
+        w.style.padding = '0 3px';
+      });
+    } else if (s.preset === 'typewriter') {
+      const full = box.dataset.fullText || '';
+      const chars = Math.ceil(full.length * progress);
+      box.textContent = full.slice(0, chars);
+    }
+  },
+
+  injectKeyframesOnce() {
+    if (document.getElementById('cs-keyframes')) return;
+    const style = document.createElement('style');
+    style.id = 'cs-keyframes';
+    style.textContent = `
+      @keyframes csPopIn { 0%{ transform:scale(.6); opacity:0; } 70%{ transform:scale(1.08); opacity:1; } 100%{ transform:scale(1); } }
+      @keyframes csBounceIn { 0%{ transform:translateY(14px); opacity:0; } 60%{ transform:translateY(-4px); opacity:1; } 100%{ transform:translateY(0); } }
+    `;
+    document.head.appendChild(style);
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — effects.js
+   Lightweight video/caption effects, applied live to the
+   preview and re-applied during export.
+   ============================================================ */
+
+const CSEffects = {
+  FADE_SECONDS: 0.6,
+
+  init() {
+    this.buildControls();
+    this.applyFilters();
+  },
+
+  fx() { return CSState.current.effects; },
+
+  buildControls() {
+    const wrap = document.getElementById('effects-controls');
+    const f = this.fx();
+    wrap.innerHTML = `
+      <div class="toggle-row">
+        <span>Fade in</span>
+        <label class="switch"><input type="checkbox" id="fx-fadein"><span class="switch-track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>Fade out</span>
+        <label class="switch"><input type="checkbox" id="fx-fadeout"><span class="switch-track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <span>Simple zoom (slow drift)</span>
+        <label class="switch"><input type="checkbox" id="fx-zoom"><span class="switch-track"></span></label>
+      </div>
+      <div class="control-row" style="margin-top:16px;">
+        <label>Caption entrance</label>
+        <div class="seg-control" id="fx-entrance">
+          <button data-v="none">None</button><button data-v="fade">Fade</button><button data-v="slide">Slide up</button>
+        </div>
+      </div>
+      <div class="control-row">
+        <label>Brightness <span id="fx-bright-val"></span></label>
+        <input type="range" class="slider" id="fx-brightness" min="60" max="140" step="2">
+      </div>
+      <div class="control-row">
+        <label>Contrast <span id="fx-contrast-val"></span></label>
+        <input type="range" class="slider" id="fx-contrast" min="60" max="140" step="2">
+      </div>
+      <div class="toggle-row">
+        <span>Blur behind captions</span>
+        <label class="switch"><input type="checkbox" id="fx-blurbg"><span class="switch-track"></span></label>
+      </div>
+    `;
+
+    document.getElementById('fx-fadein').checked = f.fadeIn;
+    document.getElementById('fx-fadein').addEventListener('change', e => this.set('fadeIn', e.target.checked));
+    document.getElementById('fx-fadeout').checked = f.fadeOut;
+    document.getElementById('fx-fadeout').addEventListener('change', e => this.set('fadeOut', e.target.checked));
+    document.getElementById('fx-zoom').checked = f.zoom;
+    document.getElementById('fx-zoom').addEventListener('change', e => this.set('zoom', e.target.checked));
+
+    const entGroup = document.getElementById('fx-entrance');
+    entGroup.querySelectorAll('button').forEach(btn => {
+      if (btn.dataset.v === f.captionEntrance) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        entGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.set('captionEntrance', btn.dataset.v);
+      });
+    });
+
+    const brightness = document.getElementById('fx-brightness');
+    brightness.value = f.brightness;
+    document.getElementById('fx-bright-val').textContent = f.brightness + '%';
+    brightness.addEventListener('input', e => {
+      document.getElementById('fx-bright-val').textContent = e.target.value + '%';
+      this.set('brightness', parseInt(e.target.value, 10));
+    });
+
+    const contrast = document.getElementById('fx-contrast');
+    contrast.value = f.contrast;
+    document.getElementById('fx-contrast-val').textContent = f.contrast + '%';
+    contrast.addEventListener('input', e => {
+      document.getElementById('fx-contrast-val').textContent = e.target.value + '%';
+      this.set('contrast', parseInt(e.target.value, 10));
+    });
+
+    document.getElementById('fx-blurbg').checked = f.captionBlurBg;
+    document.getElementById('fx-blurbg').addEventListener('change', e => this.set('captionBlurBg', e.target.checked));
+  },
+
+  set(field, value) {
+    this.fx()[field] = value;
+    CSApp.saveCurrent(false);
+    this.applyFilters();
+    if (field === 'captionBlurBg') this.applyCaptionBlur();
+  },
+
+  applyFilters() {
+    const f = this.fx();
+    CSApp.els.videoEl.style.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%)`;
+    this.applyCaptionBlur();
+  },
+
+  applyCaptionBlur() {
+    const overlay = document.getElementById('caption-overlay');
+    const box = overlay.querySelector('.cap-box');
+    if (box) box.style.backdropFilter = this.fx().captionBlurBg ? 'blur(6px)' : 'none';
+  },
+
+  // Called on every timeupdate to drive fade/zoom relative to full clip duration
+  applyTimeBasedEffects(t, duration) {
+    const f = this.fx();
+    const video = CSApp.els.videoEl;
+    let opacity = 1;
+    if (f.fadeIn && t < this.FADE_SECONDS) opacity = t / this.FADE_SECONDS;
+    if (f.fadeOut && duration && t > duration - this.FADE_SECONDS) {
+      opacity = Math.min(opacity, (duration - t) / this.FADE_SECONDS);
+    }
+    video.style.opacity = Math.max(0, Math.min(1, opacity));
+
+    if (f.zoom && duration) {
+      const scale = 1 + 0.08 * (t / duration);
+      video.style.transform = `scale(${scale.toFixed(4)})`;
+    } else {
+      video.style.transform = 'none';
+    }
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — transcribe.js
+   Real speech-to-text pipeline:
+   1. Extract audio from the uploaded video in-browser (ffmpeg.wasm)
+   2. Upload the audio to our backend /api/transcribe
+   3. Backend calls Groq Whisper (whisper-large-v3-turbo) and
+      returns timestamped segments
+   4. Populate editable captions — never fake/hardcoded text.
+   ============================================================ */
+
+const CSTranscribe = {
+  ffmpeg: null,
+  running: false,
+
+  els: {
+    overlay: null,
+    status: null
+  },
+
+  async getFFmpeg() {
+    if (this.ffmpeg) return this.ffmpeg;
+    const { createFFmpeg } = FFmpeg;
+    this.ffmpeg = createFFmpeg({
+      log: false,
+      corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+    });
+    await this.ffmpeg.load();
+    return this.ffmpeg;
+  },
+
+  showOverlay(msg) {
+    if (!this.els.overlay) {
+      this.els.overlay = document.getElementById('transcribe-overlay');
+      this.els.status = document.getElementById('transcribe-status');
+    }
+    this.els.overlay.classList.remove('hidden');
+    this.els.status.textContent = msg;
+  },
+
+  hideOverlay() {
+    if (this.els.overlay) this.els.overlay.classList.add('hidden');
+  },
+
+  showError(msg, retryFile) {
+    this.showOverlay('');
+    this.els.overlay.innerHTML = `
+      <p style="color:var(--danger); font-weight:700; margin:0;">Transcription failed</p>
+      <p style="margin:4px 0 6px; font-size:13.5px;">${msg}</p>
+      <button class="btn btn-primary" id="btn-retry-transcribe">Try again</button>
+      <button class="mini-btn" id="btn-add-manual" style="margin-top:8px;">Add captions manually instead</button>
+    `;
+    document.getElementById('btn-retry-transcribe').addEventListener('click', () => this.run(retryFile));
+    document.getElementById('btn-add-manual').addEventListener('click', () => this.hideOverlay());
+  },
+
+  async run(fileOrBlob) {
+    if (this.running) return; // prevent duplicate processing
+    this.running = true;
+    try {
+      this.showOverlay('Loading transcription engine…');
+      const ffmpeg = await this.getFFmpeg();
+
+      this.showOverlay('Extracting audio…');
+      const inputName = 'input_video';
+      ffmpeg.FS('writeFile', inputName, await FFmpeg.fetchFile(fileOrBlob));
+      // Mono, 16kHz, low-bitrate MP3 — small upload, plenty for speech recognition
+      await ffmpeg.run('-i', inputName, '-vn', '-ac', '1', '-ar', '16000', '-b:a', '64k', 'audio.mp3');
+      const audioData = ffmpeg.FS('readFile', 'audio.mp3');
+      const audioBlob = new Blob([audioData.buffer], { type: 'audio/mp3' });
+      try { ffmpeg.FS('unlink', inputName); ffmpeg.FS('unlink', 'audio.mp3'); } catch (e) {}
+
+      this.showOverlay('Transcribing with Groq Whisper…');
+      const form = new FormData();
+      form.append('audio', audioBlob, 'audio.mp3');
+
+      const res = await fetch('/api/transcribe', { method: 'POST', body: form });
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await res.json() : null;
+
+      if (!res.ok || !data || data.error) {
+        const message = (data && data.error) || `Server returned ${res.status}. Check that GROQ_API_KEY is set.`;
+        this.showError(message, fileOrBlob);
+        return;
+      }
+
+      if (!data.segments || !data.segments.length) {
+        this.showError('No speech was detected in this video.', fileOrBlob);
+        return;
+      }
+
+      CSCaptions.setFromTranscript(data.segments);
+      this.hideOverlay();
+      CSApp.toast('Captions generated');
+    } catch (err) {
+      console.error(err);
+      this.showError('Something went wrong while processing the video. ' + (err.message || ''), fileOrBlob);
+    } finally {
+      this.running = false;
+    }
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — export.js
+   Real export pipeline (runs entirely in the browser, no server):
+   1. Play the source video and draw each frame to a canvas
+   2. Draw the burned-in caption (matching the chosen preset/style)
+      and apply effects (fade, zoom, brightness/contrast) per frame
+   3. Record canvas + original audio track with MediaRecorder (webm)
+   4. Transcode webm -> mp4 with ffmpeg.wasm
+   5. Offer the final MP4 for download — never claim success on failure.
+   ============================================================ */
+
+const CSExport = {
+  els: {},
+  busy: false,
+
+  init() {
+    this.els.btn = document.getElementById('btn-export');
+    this.els.progressWrap = document.getElementById('export-progress-wrap');
+    this.els.progressFill = document.getElementById('export-progress-fill');
+    this.els.status = document.getElementById('export-status');
+    this.els.result = document.getElementById('export-result');
+    this.els.btn.addEventListener('click', () => this.start());
+  },
+
+  setProgress(pct, label) {
+    this.els.progressFill.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    if (label) this.els.status.textContent = label;
+  },
+
+  fail(msg) {
+    this.busy = false;
+    this.els.btn.disabled = false;
+    this.els.progressWrap.classList.add('hidden');
+    this.els.result.classList.remove('hidden');
+    this.els.result.innerHTML = `<p class="export-error">Export failed: ${msg}</p>`;
+  },
+
+  async start() {
+    if (this.busy) return; // prevent duplicate processing
+    if (!CSApp.els.videoEl.src) { CSApp.toast('Load a video first.'); return; }
+    this.busy = true;
+    this.els.btn.disabled = true;
+    this.els.result.classList.add('hidden');
+    this.els.result.innerHTML = '';
+    this.els.progressWrap.classList.remove('hidden');
+    this.setProgress(0, 'Preparing…');
+
+    try {
+      const webmBlob = await this.recordComposite();
+      this.setProgress(70, 'Converting to MP4…');
+      const mp4Blob = await this.transcodeToMp4(webmBlob);
+      this.setProgress(100, 'Done');
+      this.showResult(mp4Blob);
+    } catch (err) {
+      console.error(err);
+      this.fail(err.message || 'an unexpected error occurred.');
+    } finally {
+      this.busy = false;
+      this.els.btn.disabled = false;
+    }
+  },
+
+  showResult(blob) {
+    this.els.progressWrap.classList.add('hidden');
+    this.els.result.classList.remove('hidden');
+    const url = URL.createObjectURL(blob);
+    const name = (CSState.current.name || 'caption-studio-video').replace(/[^a-z0-9-_]+/gi, '_') + '.mp4';
+    this.els.result.innerHTML = `
+      <p style="color:var(--accent); font-weight:700; margin:0 0 10px;">Export complete</p>
+      <video controls src="${url}"></video>
+      <a class="btn btn-primary" href="${url}" download="${name}">Save video to device</a>
+    `;
+  },
+
+  // ---------- Step 1: record composited canvas + original audio ----------
+  recordComposite() {
+    return new Promise(async (resolve, reject) => {
+      const srcVideo = CSApp.els.videoEl;
+      if (!srcVideo.duration || !isFinite(srcVideo.duration)) {
+        reject(new Error('video not ready yet — wait for it to finish loading.'));
+        return;
+      }
+
+      const w = srcVideo.videoWidth || 720;
+      const h = srcVideo.videoHeight || 1280;
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+
+      // Render video off-screen so we don't disturb the editor preview
+      const renderVideo = document.createElement('video');
+      renderVideo.src = srcVideo.src;
+      renderVideo.muted = false;
+      renderVideo.playsInline = true;
+      await new Promise(res => { renderVideo.onloadedmetadata = res; });
+
+      let audioTracks = [];
+      try {
+        const audioStream = renderVideo.captureStream ? renderVideo.captureStream() : renderVideo.mozCaptureStream();
+        audioTracks = audioStream.getAudioTracks();
+      } catch (e) { /* some browsers require play() first; retried below */ }
+
+      const canvasStream = canvas.captureStream(30);
+      const combined = new MediaStream([
+        ...canvasStream.getVideoTracks(),
+        ...audioTracks
+      ]);
+
+      const mimeCandidates = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+      const mimeType = mimeCandidates.find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+      const recorder = new MediaRecorder(combined, { mimeType, videoBitsPerSecond: 4_000_000 });
+      const chunks = [];
+      recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+
+      let stopped = false;
+      const finish = () => {
+        if (stopped) return;
+        stopped = true;
+        try { recorder.stop(); } catch (e) {}
+        renderVideo.pause();
+      };
+
+      recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+      recorder.onerror = (e) => reject(new Error('recording failed: ' + e.error));
+
+      const duration = srcVideo.duration;
+      const drawFrame = () => {
+        if (stopped) return;
+        const t = renderVideo.currentTime;
+        this.drawComposite(ctx, renderVideo, w, h, t, duration);
+        CSExport.setProgress(Math.min(65, (t / duration) * 65), `Rendering ${Math.floor(t)}s / ${Math.floor(duration)}s`);
+        if (t >= duration - 0.05 || renderVideo.ended) {
+          finish();
+        } else {
+          renderVideo.requestVideoFrameCallback ? renderVideo.requestVideoFrameCallback(drawFrame) : requestAnimationFrame(drawFrame);
+        }
+      };
+
+      renderVideo.onended = finish;
+      recorder.start();
+      renderVideo.currentTime = 0;
+      try {
+        await renderVideo.play();
+      } catch (e) {
+        reject(new Error('could not start playback for export: ' + e.message));
+        return;
+      }
+      // Some browsers only expose the audio track once playback has begun
+      if (!audioTracks.length) {
+        try {
+          const audioStream = renderVideo.captureStream();
+          audioStream.getAudioTracks().forEach(tr => combined.addTrack(tr));
+        } catch (e) {}
+      }
+      drawFrame();
+
+      // Safety timeout in case 'ended' never fires
+      setTimeout(finish, (duration + 3) * 1000);
+    });
+  },
+
+  drawComposite(ctx, video, w, h, t, duration) {
+    const f = CSState.current.effects;
+    const s = CSState.current.style;
+
+    ctx.save();
+    ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%)`;
+
+    let scale = 1;
+    if (f.zoom) scale = 1 + 0.08 * (t / duration);
+    const dw = w * scale, dh = h * scale;
+    const dx = (w - dw) / 2, dy = (h - dh) / 2;
+
+    let alpha = 1;
+    if (f.fadeIn && t < 0.6) alpha = t / 0.6;
+    if (f.fadeOut && t > duration - 0.6) alpha = Math.min(alpha, (duration - t) / 0.6);
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+
+    ctx.drawImage(video, dx, dy, dw, dh);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+
+    const seg = CSState.current.captions.find(c => t >= c.start && t <= c.end);
+    if (seg) this.drawCaption(ctx, seg, t, w, h, s, f);
+  },
+
+  drawCaption(ctx, seg, t, w, h, s, f) {
+    const words = seg.text.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return;
+    const progress = Math.min(1, Math.max(0, (t - seg.start) / Math.max(0.01, seg.end - seg.start)));
+    const fontSize = s.fontSize * (w / 720); // scale relative to reference width
+    ctx.font = `700 ${fontSize}px ${s.fontFamily.replace(/'/g, '')}`;
+    ctx.textBaseline = 'middle';
+
+    let displayWords = words;
+    if (s.preset === 'typewriter') {
+      const full = seg.text.trim();
+      const chars = Math.ceil(full.length * progress);
+      displayWords = [full.slice(0, chars)];
+    }
+
+    // Wrap words into lines that fit within 88% of frame width
+    const maxWidth = w * 0.88;
+    const spaceWidth = ctx.measureText(' ').width;
+    const lines = [[]];
+    let lineWidth = 0;
+    displayWords.forEach((word, i) => {
+      const wordWidth = ctx.measureText(word).width;
+      if (lineWidth + wordWidth > maxWidth && lines[lines.length - 1].length) {
+        lines.push([]);
+        lineWidth = 0;
+      }
+      lines[lines.length - 1].push({ text: word, idx: i, width: wordWidth });
+      lineWidth += wordWidth + spaceWidth;
+    });
+
+    const lineHeight = fontSize * 13 / 10 * 10 / 10; // fontSize*1.3
+    const totalHeight = lines.length * fontSize * 1.3;
+    let baseY;
+    if (s.position === 'top') baseY = h * 0.1 + totalHeight / 2;
+    else if (s.position === 'middle') baseY = h * 0.5;
+    else baseY = h * 0.88 - totalHeight / 2;
+
+    lines.forEach((line, li) => {
+      const y = baseY + li * fontSize * 1.3;
+      const totalLineWidth = line.reduce((a, wd) => a + wd.width, 0) + spaceWidth * (line.length - 1);
+      let x;
+      if (s.align === 'left') x = w * 0.06;
+      else if (s.align === 'right') x = w - w * 0.06 - totalLineWidth;
+      else x = (w - totalLineWidth) / 2;
+
+      if (s.background) {
+        ctx.fillStyle = 'rgba(10,10,14,0.68)';
+        ctx.fillRect(x - 10, y - fontSize * 0.7, totalLineWidth + 20, fontSize * 1.3);
+      }
+
+      line.forEach(wd => {
+        let color = s.color;
+        let hlBg = null;
+        if (s.preset === 'karaoke') {
+          const n = words.length;
+          const wp = Math.min(1, Math.max(0, progress * n - wd.idx));
+          if (wp > 0) hlBg = s.highlightColor;
+        } else if (s.preset === 'wordhi') {
+          const activeIdx = Math.min(words.length - 1, Math.floor(progress * words.length));
+          if (wd.idx === activeIdx) { hlBg = s.highlightColor; color = '#0b0b0f'; }
+        }
+        if (hlBg) {
+          ctx.fillStyle = hlBg;
+          ctx.fillRect(x - 3, y - fontSize * 0.6, wd.width + 6, fontSize * 1.1);
+        }
+        if (s.outline) {
+          ctx.shadowColor = 'rgba(0,0,0,0.85)';
+          ctx.shadowBlur = 6;
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        let drawY = y;
+        if (s.preset === 'bounce') {
+          const stagger = 0.12;
+          const local = Math.min(1, Math.max(0, progress * words.length / (words.length || 1) - wd.idx * stagger));
+          drawY = y + (1 - local) * 14;
+        }
+        ctx.fillStyle = color;
+        ctx.fillText(wd.text, x, drawY);
+        x += wd.width + spaceWidth;
+      });
+    });
+    ctx.shadowBlur = 0;
+  },
+
+  // ---------- Step 2: transcode webm -> mp4 with ffmpeg.wasm ----------
+  async transcodeToMp4(webmBlob) {
+    const ffmpeg = await CSTranscribe.getFFmpeg();
+    ffmpeg.FS('writeFile', 'export_in.webm', await FFmpeg.fetchFile(webmBlob));
+    await ffmpeg.run('-i', 'export_in.webm', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', 'export_out.mp4');
+    const data = ffmpeg.FS('readFile', 'export_out.mp4');
+    try { ffmpeg.FS('unlink', 'export_in.webm'); ffmpeg.FS('unlink', 'export_out.mp4'); } catch (e) {}
+    return new Blob([data.buffer], { type: 'video/mp4' });
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => CSExport.init());
+
+</script>
+</body>
+</html>
