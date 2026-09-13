@@ -1354,7 +1354,8 @@ const CSTranscribe = {
       // Don't cache a half-initialized instance — otherwise "Try again" would
       // keep returning the same broken object instead of retrying load().
       if (typeof SharedArrayBuffer === 'undefined') {
-        throw new Error('this browser tab isn\'t cross-origin isolated, so SharedArrayBuffer is unavailable. This should be fixed by the COOP/COEP headers in vercel.json — redeploy after adding them, then hard-refresh.');
+        const isolated = typeof self !== 'undefined' ? self.crossOriginIsolated : 'unknown';
+        throw new Error(`this browser tab isn't cross-origin isolated (crossOriginIsolated: ${isolated}), so SharedArrayBuffer is unavailable. This means the COOP/COEP headers from vercel.json aren't reaching the browser — double-check vercel.json sits at the very root of the deployed project (same level as index.html, not nested in a subfolder), then redeploy with 'vercel --prod' and hard-refresh.`);
       }
       throw err;
     }
