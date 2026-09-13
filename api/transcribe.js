@@ -9,7 +9,16 @@
      GROQ_API_KEY = <your Groq API key>
    ============================================================ */
 
-const formidable = require('formidable');
+const formidableLib = require('formidable');
+// formidable's export shape has changed across major versions (plain function
+// in v2, a named `formidable` export or `.default` in v3 depending on how the
+// CJS build is resolved) — detect whichever is actually callable so this
+// keeps working regardless of which shape npm installed.
+const formidableFactory =
+  typeof formidableLib === 'function' ? formidableLib :
+  typeof formidableLib.formidable === 'function' ? formidableLib.formidable :
+  typeof formidableLib.default === 'function' ? formidableLib.default :
+  null;
 const fs = require('fs');
 
 module.exports = async (req, res) => {
@@ -84,7 +93,23 @@ module.exports = async (req, res) => {
 
 function parseUpload(req) {
   return new Promise((resolve, reject) => {
-    const form = formidable({ maxFileSize: 30 * 1024 * 1024 });
+    let form;
+    try {
+      if (formidableFactory) {
+        form = formidableFactory({ maxFileSize: 30 * 1024 * 1024 });
+      } else if (formidableLib.IncomingForm) {
+        // Older v1/v2-style constructor as a last-resort fallback
+        form = new formidableLib.IncomingForm();
+        form.maxFileSize = 30 * 1024 * 1024;
+      } else {
+        reject(new Error('the formidable package export shape was not recognized. Check the installed version.'));
+        return;
+      }
+    } catch (err) {
+      reject(err);
+      return;
+    }
+
     form.parse(req, (err, fields, files) => {
       if (err) { reject(err); return; }
       const file = files.audio && (Array.isArray(files.audio) ? files.audio[0] : files.audio);
