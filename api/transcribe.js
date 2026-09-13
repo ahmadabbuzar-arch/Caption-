@@ -1,0 +1,101 @@
+/* ============================================================
+   Caption Studio — /api/transcribe
+   Secure backend endpoint. Receives the extracted audio track,
+   forwards it to Groq's Whisper API using a server-side-only
+   API key, and returns timestamped caption segments.
+
+   Required environment variable (set in your Vercel project,
+   never committed to source control):
+     GROQ_API_KEY = <your Groq API key>
+   ============================================================ */
+
+const formidable = require('formidable');
+const fs = require('fs');
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed. Use POST.' });
+    return;
+  }
+
+  if (!process.env.GROQ_API_KEY) {
+    res.status(500).json({ error: 'Server is missing GROQ_API_KEY. Add it in your Vercel project settings under Environment Variables.' });
+    return;
+  }
+
+  let audioPath;
+  try {
+    const { path } = await parseUpload(req);
+    audioPath = path;
+  } catch (err) {
+    res.status(400).json({ error: 'Could not read the uploaded audio: ' + err.message });
+    return;
+  }
+
+  try {
+    const stats = fs.statSync(audioPath);
+    const MAX_BYTES = 25 * 1024 * 1024; // Groq's free-tier audio size ceiling
+    if (stats.size > MAX_BYTES) {
+      res.status(413).json({ error: 'Audio extracted from this video is too large to transcribe. Try a shorter clip.' });
+      return;
+    }
+
+    const fileBuffer = fs.readFileSync(audioPath);
+    const form = new FormData();
+    form.append('file', new Blob([fileBuffer], { type: 'audio/mp3' }), 'audio.mp3');
+    form.append('model', 'whisper-large-v3-turbo');
+    form.append('response_format', 'verbose_json');
+    // No 'language' field is sent — Groq Whisper auto-detects, which is
+    // what lets Hindi, English, and Hinglish speech all be picked up.
+
+    const groqRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+      body: form
+    });
+
+    const raw = await groqRes.text();
+    let data;
+    try { data = JSON.parse(raw); } catch (e) {
+      res.status(502).json({ error: 'Groq returned an unexpected response.' });
+      return;
+    }
+
+    if (!groqRes.ok) {
+      const message = (data && data.error && data.error.message) || `Groq API error (status ${groqRes.status}).`;
+      res.status(groqRes.status).json({ error: message });
+      return;
+    }
+
+    const segments = (data.segments || []).map(s => ({
+      start: s.start,
+      end: s.end,
+      text: (s.text || '').trim()
+    })).filter(s => s.text.length > 0);
+
+    res.status(200).json({ segments, language: data.language || null });
+  } catch (err) {
+    console.error('Transcription error:', err);
+    res.status(500).json({ error: 'Transcription failed. Please try again.' });
+  } finally {
+    if (audioPath) fs.unlink(audioPath, () => {});
+  }
+};
+
+function parseUpload(req) {
+  return new Promise((resolve, reject) => {
+    const form = formidable({ maxFileSize: 30 * 1024 * 1024 });
+    form.parse(req, (err, fields, files) => {
+      if (err) { reject(err); return; }
+      const file = files.audio && (Array.isArray(files.audio) ? files.audio[0] : files.audio);
+      if (!file) { reject(new Error('no audio file was included in the request.')); return; }
+      resolve({ path: file.filepath || file.path });
+    });
+  });
+}
+
+module.exports.config = {
+  api: {
+    bodyParser: false
+  }
+};
