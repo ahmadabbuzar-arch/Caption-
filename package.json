@@ -1,0 +1,15 @@
+{
+  "name": "caption-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile-first AI auto-caption video editor powered by Groq Whisper.",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "formidable": "^3.5.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
