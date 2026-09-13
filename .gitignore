@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Vercel
+.vercel/
+
+# Environment variables (never commit your real GROQ_API_KEY)
+.env
+.env.local
+.env*.local
+
+# OS files
+.DS_Store
+Thumbs.db
