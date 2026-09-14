@@ -5,7 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
 <title>Caption Studio</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Poppins:wght@600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@600&display=swap');
+/* Bundled local fonts (Caption Studio Font Pack) — no external font CDN, so
+   nothing here is affected by the Cross-Origin-Embedder-Policy header that
+   ffmpeg.wasm requires (a remote @import like Google Fonts would silently
+   fail to load under COEP:require-corp unless that CDN opts in). */
+@font-face{ font-family:'Inter'; src:url('assets/fonts/Inter-Regular.otf'); font-weight:400; font-display:swap; }
+@font-face{ font-family:'Inter'; src:url('assets/fonts/Inter-Bold.otf'); font-weight:700; font-display:swap; }
+@font-face{ font-family:'Inter'; src:url('assets/fonts/Inter-ExtraBold.otf'); font-weight:800; font-display:swap; }
+@font-face{ font-family:'Cabin'; src:url('assets/fonts/Cabin-SemiBold.otf'); font-weight:600; font-display:swap; }
+@font-face{ font-family:'Cabin'; src:url('assets/fonts/Cabin-Bold.otf'); font-weight:700; font-display:swap; }
+@font-face{ font-family:'Amiri'; src:url('assets/fonts/Amiri-Regular.ttf'); font-weight:400; font-display:swap; }
+@font-face{ font-family:'Amiri'; src:url('assets/fonts/Amiri-Bold.ttf'); font-weight:700; font-display:swap; }
+@font-face{ font-family:'Noto Kufi Arabic'; src:url('assets/fonts/NotoKufiArabic-Regular.ttf'); font-weight:400; font-display:swap; }
+@font-face{ font-family:'Noto Kufi Arabic'; src:url('assets/fonts/NotoKufiArabic-Bold.ttf'); font-weight:700; font-display:swap; }
+@font-face{ font-family:'Noto Kufi Arabic'; src:url('assets/fonts/NotoKufiArabic-Black.ttf'); font-weight:900; font-display:swap; }
+@font-face{ font-family:'Lohit Devanagari'; src:url('assets/fonts/Lohit-Devanagari.ttf'); font-weight:400; font-display:swap; }
 
 :root{
   --bg: #121218;
@@ -29,7 +43,7 @@ body{
   margin:0;
   background:var(--bg);
   color:var(--text);
-  font-family:'Manrope', system-ui, sans-serif;
+  font-family:'Inter', system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
   overflow-x:hidden;
 }
@@ -241,6 +255,53 @@ select.select-input, input.text-input-full{
   .preview-frame{ max-width:340px; }
 }
 
+/* ================= Caption word animations (Effects & Animation Pack) ================= */
+.caption-word{ display:inline-block; will-change:transform,opacity,filter; }
+.cs-karaoke-highlight.is-active{ color:var(--caption-highlight,#ffe45c); transition:color .1s linear; }
+.cs-glow-pulse.is-active{ animation:cs-glow-pulse .5s ease-in-out infinite; }
+.cs-emphasis-punch.is-active{ color:var(--caption-highlight,#ffe45c); }
+
+@keyframes cs-word-pop{0%{opacity:0;transform:translateY(5px) scale(.88)}65%{opacity:1;transform:translateY(-1px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.cs-word-pop{ animation:cs-word-pop .24s cubic-bezier(.2,.8,.2,1) both; }
+
+@keyframes cs-smooth-slide{0%{opacity:0;transform:translateY(12px)}100%{opacity:1;transform:translateY(0)}}
+.cs-smooth-slide{ animation:cs-smooth-slide .28s cubic-bezier(.22,1,.36,1) both; }
+
+@keyframes cs-typewriter{0%{opacity:0}100%{opacity:1}}
+.cs-typewriter{ animation:cs-typewriter .18s steps(2,end) both; }
+
+@keyframes cs-emphasis-punch{0%,100%{transform:scale(1)}35%{transform:scale(1.14)}65%{transform:scale(.98)}}
+.cs-emphasis-punch{ animation:cs-emphasis-punch .34s cubic-bezier(.2,.9,.2,1) both; }
+
+@keyframes cs-minimal-fade{0%{opacity:0}100%{opacity:1}}
+.cs-minimal-fade{ animation:cs-minimal-fade .22s ease-out both; }
+
+@keyframes cs-soft-bounce{0%{opacity:0;transform:translateY(8px) scale(.96)}60%{opacity:1;transform:translateY(-2px) scale(1.02)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.cs-soft-bounce{ animation:cs-soft-bounce .36s cubic-bezier(.34,1.56,.64,1) both; }
+
+@keyframes cs-glow-pulse{0%,100%{filter:drop-shadow(0 0 0 transparent)}50%{filter:drop-shadow(0 0 8px var(--caption-highlight,#ffe45c))}}
+
+@media(prefers-reduced-motion:reduce){ .caption-word{ animation:none!important; transition:none!important; } }
+
+/* ================= Language row / word chips ================= */
+.lang-note{ font-size:12px; color:var(--accent-2); background:rgba(255,209,102,.08); border:1px solid rgba(255,209,102,.25); border-radius:8px; padding:8px 10px; margin-top:8px; line-height:1.4; }
+.word-chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.word-chip{ background:var(--surface-2); border:1px solid var(--line); border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; }
+.word-chip small{ color:var(--text-dim); font-size:9.5px; }
+.word-estimate-note{ font-size:11.5px; color:var(--text-dim); margin:8px 0 0; font-style:italic; }
+
+/* ================= Text overlay tab & layer ================= */
+.text-tab-hint{ color:var(--text-dim); font-size:13px; margin:-6px 0 14px; }
+.text-overlay-controls{ display:flex; align-items:center; gap:10px; margin:8px 0; }
+.text-overlay-controls .select-input{ flex:1; }
+.text-overlay-layer{ position:absolute; inset:0; pointer-events:none; }
+
+/* ================= SVG decorative overlay ================= */
+.svg-overlay-layer{ position:absolute; inset:0; pointer-events:none; color:var(--accent-2); }
+.svg-overlay-layer svg{ position:absolute; }
+.svg-overlay-layer.overlay-sparkle svg{ width:15%; top:4%; right:4%; }
+.svg-overlay-layer.overlay-swoosh svg{ width:60%; left:20%; bottom:14%; opacity:.85; }
+
 </style>
 </head>
 <body>
@@ -294,7 +355,9 @@ select.select-input, input.text-input-full{
   <div class="preview-wrap">
     <div class="preview-frame" id="preview-frame">
       <video id="video-el" playsinline></video>
+      <div id="svg-overlay-layer" class="svg-overlay-layer"></div>
       <div id="caption-overlay" class="caption-overlay"></div>
+      <div id="text-overlay-layer" class="text-overlay-layer"></div>
       <div id="transcribe-overlay" class="transcribe-overlay hidden">
         <div class="spinner"></div>
         <p id="transcribe-status">Extracting audio…</p>
@@ -318,6 +381,7 @@ select.select-input, input.text-input-full{
         <h3>Captions</h3>
         <button id="btn-add-caption" class="btn btn-small">+ Add segment</button>
       </div>
+      <div id="language-row"></div>
       <div id="caption-list" class="caption-list"></div>
     </div>
 
@@ -333,8 +397,12 @@ select.select-input, input.text-input-full{
     </div>
 
     <div class="panel" id="panel-text">
-      <div class="panel-header"><h3>Text</h3></div>
-      <div class="text-controls" id="text-controls"></div>
+      <div class="panel-header">
+        <h3>Text</h3>
+        <button id="btn-add-text" class="btn btn-small">+ Add text</button>
+      </div>
+      <p class="text-tab-hint">Custom titles or callouts, independent of the speech captions above.</p>
+      <div id="text-overlay-list" class="caption-list"></div>
     </div>
 
     <div class="panel" id="panel-export">
@@ -469,7 +537,25 @@ const CSState = {
   },
 
   getProjectMeta(id) {
-    return this.listProjects().find(p => p.id === id) || null;
+    return this.migrate(this.listProjects().find(p => p.id === id) || null);
+  },
+
+  // Fills in fields introduced after a project may have been saved, so
+  // older saved projects don't crash the newer UI.
+  migrate(project) {
+    if (!project) return project;
+    if (!project.language) project.language = 'auto';
+    if (!project.textOverlays) project.textOverlays = [];
+    if (!project.captions) project.captions = [];
+    const styleDefaults = { fontWeight: 700, outlineWidth: 2, shadowIntensity: 60, bgOpacity: 55, lineSpacing: 1.3, animation: 'minimal-fade', animIntensity: 1, direction: 'ltr' };
+    project.style = Object.assign({}, styleDefaults, project.style || {});
+    const fxDefaults = { overlay: 'none' };
+    project.effects = Object.assign({}, fxDefaults, project.effects || {});
+    (project.captions || []).forEach(c => {
+      if (c.words === undefined) c.words = null;
+      if (c.wordTimingEstimated === undefined) c.wordTimingEstimated = true;
+    });
+    return project;
   },
 
   deleteProject(id) {
@@ -485,29 +571,190 @@ const CSState = {
       name: 'Untitled project',
       createdAt: Date.now(),
       videoMeta,
+      language: 'auto',
       captions: [],
+      textOverlays: [],
       style: {
         preset: 'clean',
-        fontFamily: "'Manrope', sans-serif",
+        fontFamily: "'Inter', sans-serif",
+        fontWeight: 700,
         fontSize: 26,
         color: '#ffffff',
         highlightColor: '#2fe1c2',
+        outlineWidth: 2,
+        shadowIntensity: 60,
+        bgOpacity: 55,
         position: 'bottom',
         align: 'center',
-        background: true,
+        lineSpacing: 1.3,
+        animation: 'minimal-fade',
+        animSpeed: 1,
+        animIntensity: 1,
+        background: false,
         outline: true,
-        animSpeed: 1
+        direction: 'ltr'
       },
       effects: {
         fadeIn: false,
         fadeOut: false,
         zoom: false,
-        captionEntrance: 'none',
         brightness: 100,
         contrast: 100,
-        captionBlurBg: false
+        captionBlurBg: false,
+        overlay: 'none' // 'none' | 'sparkle' | 'swoosh'
       }
     };
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — engine.js
+   The single source of truth for caption timing, presets, and
+   per-word animation math. Both the live DOM/CSS preview
+   (styles.js) and the canvas export renderer (export.js) read
+   from this file so they stay visually consistent — the DOM
+   version plays the real CSS keyframes from
+   caption-animations.css, the canvas version numerically
+   reproduces the same curve shapes (see CS_EASING below) since
+   CSS animations can't be captured directly by a canvas
+   recorder.
+   ============================================================ */
+
+const CSEngine = {
+  LANGUAGES: [
+    { id: 'auto', label: 'Auto Detect', groqParam: null, dir: 'ltr', font: "'Inter', sans-serif", note: null },
+    { id: 'en', label: 'English', groqParam: 'en', dir: 'ltr', font: "'Inter', sans-serif", note: null },
+    { id: 'ur', label: 'Urdu Script', groqParam: 'ur', dir: 'rtl', font: "'Amiri', serif", note: null },
+    { id: 'ur-roman', label: 'Roman Urdu', groqParam: 'ur', dir: 'ltr', font: "'Inter', sans-serif",
+      note: 'Experimental: the speech model transcribes Urdu in its native script — it does not output Latin-letter "Roman Urdu". You may need to manually re-type segments in Roman letters after transcription.' },
+    { id: 'hi', label: 'Hindi', groqParam: 'hi', dir: 'ltr', font: "'Lohit Devanagari', sans-serif", note: null },
+    { id: 'hi-en', label: 'Hinglish', groqParam: null, dir: 'ltr', font: "'Inter', sans-serif",
+      note: 'Experimental: there is no dedicated Hinglish mode in the speech model, so this runs auto-detect and may return Hindi script, English, or a mix.' }
+  ],
+
+  STYLE_PRESETS: [
+    { id: 'clean',   label: 'Clean White',   fontFamily: "'Inter', sans-serif",   fontWeight: 700, color: '#ffffff', highlightColor: '#ffffff', background: false, outline: true,  bgOpacity: 0,  animation: 'minimal-fade' },
+    { id: 'boldhi',  label: 'Bold Highlight', fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#ffd166', background: true,  outline: true,  bgOpacity: 60, animation: 'word-pop' },
+    { id: 'karaoke', label: 'Karaoke',        fontFamily: "'Inter', sans-serif",  fontWeight: 700, color: '#ffffff', highlightColor: '#2fe1c2', background: false, outline: true,  bgOpacity: 0,  animation: 'karaoke-highlight' },
+    { id: 'minimal', label: 'Minimal',        fontFamily: "'Inter', sans-serif",  fontWeight: 500, color: '#ffffff', highlightColor: '#ffffff', background: false, outline: false, bgOpacity: 0,  animation: 'minimal-fade' },
+    { id: 'modpop',  label: 'Modern Pop',     fontFamily: "'Cabin', sans-serif",  fontWeight: 700, color: '#0b0b0f', highlightColor: '#ff5f6d', background: true,  outline: false, bgOpacity: 90, animation: 'soft-bounce' },
+    { id: 'cinema',  label: 'Cinematic',      fontFamily: "'Cabin', sans-serif",  fontWeight: 600, color: '#f4f1ea', highlightColor: '#f4f1ea', background: false, outline: true,  bgOpacity: 0,  animation: 'smooth-slide' },
+    { id: 'neon',    label: 'Neon Accent',    fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#8c7bff', background: false, outline: true,  bgOpacity: 0,  animation: 'glow-pulse' }
+  ],
+
+  ANIMATION_PRESETS: [
+    { id: 'word-pop',          label: 'Word Pop' },
+    { id: 'karaoke-highlight', label: 'Karaoke Highlight' },
+    { id: 'smooth-slide',      label: 'Smooth Slide' },
+    { id: 'typewriter',        label: 'Typewriter Reveal' },
+    { id: 'emphasis-punch',    label: 'Emphasis Punch' },
+    { id: 'minimal-fade',      label: 'Minimal Fade' },
+    { id: 'soft-bounce',       label: 'Soft Bounce' },
+    { id: 'glow-pulse',        label: 'Glow Pulse' }
+  ],
+
+  langInfo(id) {
+    return this.LANGUAGES.find(l => l.id === id) || this.LANGUAGES[0];
+  },
+  presetInfo(id) {
+    return this.STYLE_PRESETS.find(p => p.id === id) || this.STYLE_PRESETS[0];
+  },
+
+  // ---------- Word timing ----------
+  // Returns [{text, start, end}], using real per-word timestamps from Groq
+  // when the segment has them, otherwise evenly estimating within the
+  // segment's own start/end (flagged so the UI can say so honestly).
+  getWords(seg) {
+    if (Array.isArray(seg.words) && seg.words.length) return seg.words;
+    const tokens = seg.text.trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return [];
+    const span = Math.max(0.05, seg.end - seg.start);
+    const step = span / tokens.length;
+    return tokens.map((t, i) => ({
+      text: t,
+      start: seg.start + i * step,
+      end: seg.start + (i + 1) * step
+    }));
+  },
+
+  activeWordIndex(words, t) {
+    if (!words.length) return -1;
+    let idx = words.findIndex(w => t >= w.start && t < w.end);
+    if (idx === -1 && t >= words[words.length - 1].end) idx = words.length - 1;
+    return idx;
+  },
+
+  // ---------- Easing (numeric mirrors of caption-animations.css keyframes,
+  // used by the canvas export renderer, which can't play real CSS animations) ----------
+  easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); },
+  easeOutBack(x) {
+    const c1 = 1.70158, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+  },
+
+  // Given an animation preset id and how far (seconds) we are into a word's
+  // own lifetime, return { opacity, scale, translateY, glow } to draw with.
+  // durations intentionally mirror caption-animations.css.
+  wordTransform(presetId, localSec, speed, intensity) {
+    const s = Math.max(0.3, speed || 1);
+    const inten = Math.max(0, Math.min(2, intensity == null ? 1 : intensity));
+    const t = Math.max(0, localSec * s);
+    const base = { opacity: 1, scale: 1, translateY: 0, glow: 0 };
+
+    switch (presetId) {
+      case 'word-pop': {
+        const d = 0.24, p = Math.min(1, t / d);
+        const e = this.easeOutBack(p);
+        base.opacity = Math.min(1, t / (d * 0.4));
+        base.scale = 1 + (0.04 * inten) * (1 - Math.abs(1 - e));
+        base.translateY = (1 - p) * 5 * inten;
+        return base;
+      }
+      case 'smooth-slide': {
+        const d = 0.28, p = Math.min(1, t / d);
+        const e = this.easeOutCubic(p);
+        base.opacity = e;
+        base.translateY = (1 - e) * 12 * inten;
+        return base;
+      }
+      case 'typewriter': {
+        // Word-level reveal: each word simply appears at its own start time
+        base.opacity = t <= 0 ? 0 : 1;
+        return base;
+      }
+      case 'emphasis-punch': {
+        const d = 0.34, p = Math.min(1, t / d);
+        let scale = 1;
+        if (p < 0.35) scale = 1 + (0.14 * inten) * (p / 0.35);
+        else if (p < 0.65) scale = 1 + 0.14 * inten - (0.16 * inten) * ((p - 0.35) / 0.3);
+        else scale = 1 - 0.02 * inten + (0.02 * inten) * ((p - 0.65) / 0.35);
+        base.scale = scale;
+        return base;
+      }
+      case 'minimal-fade': {
+        const d = 0.22, p = Math.min(1, t / d);
+        base.opacity = p;
+        return base;
+      }
+      case 'soft-bounce': {
+        const d = 0.36, p = Math.min(1, t / d);
+        const e = this.easeOutBack(p);
+        base.opacity = Math.min(1, t / (d * 0.5));
+        base.scale = 0.96 + 0.06 * inten * e;
+        base.translateY = (1 - e) * 8 * inten;
+        return base;
+      }
+      case 'glow-pulse': {
+        const period = 0.5 / s;
+        const phase = (localSec % period) / period;
+        base.glow = (0.5 - 0.5 * Math.cos(phase * Math.PI * 2)) * 8 * inten;
+        return base;
+      }
+      case 'karaoke-highlight':
+      default:
+        return base; // instant colour swap, no motion — handled by caller
+    }
   }
 };
 
@@ -664,6 +911,7 @@ const CSApp = {
     document.getElementById('screen-home').classList.remove('active');
     document.getElementById('screen-editor').classList.add('active');
 
+    this.currentFileOrBlob = fileOrBlob;
     this.els.projectName.value = project.name;
     const url = URL.createObjectURL(fileOrBlob);
     this.els.videoEl.src = url;
@@ -675,12 +923,10 @@ const CSApp = {
     CSCaptions.render();
     CSStyles.init();
     CSEffects.init();
+    CSTextOverlay.init();
     this.switchTab('captions');
-
-    // Kick off real transcription if this project has no captions yet
-    if (!project.captions || project.captions.length === 0) {
-      CSTranscribe.run(fileOrBlob);
-    }
+    // Transcription is user-initiated from the Captions tab (pick a language
+    // first, then tap Generate) rather than auto-starting on upload.
   },
 
   goHome() {
@@ -728,6 +974,7 @@ const CSApp = {
     }
     this.updateTimeLabel();
     CSCaptions.updateOverlay(this.els.videoEl.currentTime);
+    CSTextOverlay.updateOverlay(this.els.videoEl.currentTime);
     CSEffects.applyTimeBasedEffects(this.els.videoEl.currentTime, this.els.videoEl.duration);
   },
   onScrub() {
@@ -751,8 +998,10 @@ document.addEventListener('DOMContentLoaded', () => CSApp.init());
 
 /* ============================================================
    Caption Studio — captions.js
-   Manual caption editing: add, edit, delete, split, merge,
-   retime, and keep the video-preview overlay in sync.
+   Language selection + explicit "Generate captions" action,
+   manual phrase editing (add/split/merge/retime/delete), and
+   per-word timing chips when real word-level timestamps exist.
+   Keeps the video-preview overlay in sync every frame.
    ============================================================ */
 
 const CSCaptions = {
@@ -763,6 +1012,7 @@ const CSCaptions = {
     this.els.list = document.getElementById('caption-list');
     this.els.overlay = document.getElementById('caption-overlay');
     this.els.addBtn = document.getElementById('btn-add-caption');
+    this.els.langRow = document.getElementById('language-row');
     this.els.addBtn.addEventListener('click', () => this.addSegment());
   },
 
@@ -781,32 +1031,75 @@ const CSCaptions = {
       id: 'cap_' + Date.now() + '_' + i,
       start: s.start,
       end: s.end,
-      text: s.text.trim()
+      text: s.text.trim(),
+      words: Array.isArray(s.words) && s.words.length ? s.words : null,
+      wordTimingEstimated: !(Array.isArray(s.words) && s.words.length)
     }));
+    this.applyLanguageDefaults();
     this.render();
     CSApp.saveCurrent(false);
   },
 
+  applyLanguageDefaults() {
+    const lang = CSEngine.langInfo(CSState.current.language);
+    CSState.current.style.fontFamily = lang.font;
+    CSState.current.style.direction = lang.dir;
+  },
+
   render() {
     if (!this.els.list) this.init();
+    this.renderLanguageRow();
     const list = this.segments();
     this.els.list.innerHTML = '';
     if (!list.length) {
       const empty = document.createElement('p');
       empty.style.color = 'var(--text-dim)';
       empty.style.fontSize = '13.5px';
-      empty.textContent = 'No captions yet. They will appear here once transcription finishes, or add one manually.';
+      empty.textContent = 'No captions yet. Pick a language above and generate them, or add one manually.';
       this.els.list.appendChild(empty);
       return;
     }
     list.sort((a, b) => a.start - b.start);
-    list.forEach((seg, idx) => this.els.list.appendChild(this.buildRow(seg, idx)));
+    list.forEach((seg) => this.els.list.appendChild(this.buildRow(seg)));
   },
 
-  buildRow(seg, idx) {
+  renderLanguageRow() {
+    const lang = CSEngine.langInfo(CSState.current.language);
+    this.els.langRow.innerHTML = `
+      <div class="control-row">
+        <label>Language</label>
+        <select class="select-input" id="ctl-language">
+          ${CSEngine.LANGUAGES.map(l => `<option value="${l.id}">${l.label}</option>`).join('')}
+        </select>
+        ${lang.note ? `<p class="lang-note">${lang.note}</p>` : ''}
+      </div>
+      <button class="btn btn-primary" id="btn-generate" style="width:100%; margin-bottom:14px;">
+        ${this.segments().length ? 'Regenerate captions' : 'Generate captions'}
+      </button>
+    `;
+    const select = document.getElementById('ctl-language');
+    select.value = CSState.current.language;
+    select.addEventListener('change', (e) => {
+      CSState.current.language = e.target.value;
+      CSApp.saveCurrent(false);
+      this.renderLanguageRow();
+    });
+    document.getElementById('btn-generate').addEventListener('click', () => {
+      if (!CSApp.currentFileOrBlob) { CSApp.toast('Video not ready yet.'); return; }
+      CSTranscribe.run(CSApp.currentFileOrBlob);
+    });
+  },
+
+  buildRow(seg) {
     const row = document.createElement('div');
     row.className = 'caption-item';
     row.dataset.id = seg.id;
+
+    const wordsHtml = (!seg.wordTimingEstimated && Array.isArray(seg.words))
+      ? `<div class="word-chip-row">${seg.words.map((w, i) =>
+          `<span class="word-chip" data-widx="${i}">${this.escape(w.text)}<small>${this.fmt(w.start)}</small></span>`).join('')}</div>`
+      : `<p class="word-estimate-note">Word timing estimated evenly across this phrase (no word-level timestamps from the API).</p>`;
+
     row.innerHTML = `
       <div class="caption-item-top">
         <div>
@@ -821,20 +1114,37 @@ const CSCaptions = {
         </div>
       </div>
       <textarea class="caption-text-field" rows="2" data-field="text">${this.escape(seg.text)}</textarea>
+      ${wordsHtml}
     `;
 
     row.querySelector('[data-field="text"]').addEventListener('input', (e) => {
       seg.text = e.target.value;
+      seg.words = null; // manual text edits invalidate word-level timestamps
+      seg.wordTimingEstimated = true;
       CSApp.saveCurrent(false);
       CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
     });
     row.querySelectorAll('.caption-time-input').forEach(inp => {
       inp.addEventListener('change', (e) => this.onTimeEdit(seg, e.target));
     });
+    row.querySelectorAll('.word-chip').forEach(chip => {
+      chip.addEventListener('click', () => this.editWord(seg, parseInt(chip.dataset.widx, 10)));
+    });
     row.querySelector('[data-action="split"]').addEventListener('click', () => this.split(seg));
     row.querySelector('[data-action="merge"]').addEventListener('click', () => this.mergeWithNext(seg));
     row.querySelector('[data-action="delete"]').addEventListener('click', () => this.delete(seg));
     return row;
+  },
+
+  editWord(seg, idx) {
+    const word = seg.words[idx];
+    const newText = prompt('Edit word:', word.text);
+    if (newText === null) return;
+    word.text = newText.trim() || word.text;
+    seg.text = seg.words.map(w => w.text).join(' ');
+    this.render();
+    CSApp.saveCurrent(false);
+    CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
   },
 
   escape(s) {
@@ -863,6 +1173,7 @@ const CSCaptions = {
       if (val <= seg.start) { CSApp.toast('End must be after start.'); this.render(); return; }
       seg.end = val;
     }
+    seg.words = null; seg.wordTimingEstimated = true; // re-estimate after manual retime
     this.render();
     CSApp.saveCurrent(false);
   },
@@ -874,7 +1185,9 @@ const CSCaptions = {
       id: 'cap_' + Date.now(),
       start: t,
       end: Math.min(t + 2, dur),
-      text: 'New caption'
+      text: 'New caption',
+      words: null,
+      wordTimingEstimated: true
     };
     this.segments().push(seg);
     this.render();
@@ -889,9 +1202,10 @@ const CSCaptions = {
     const secondText = words.slice(mid).join(' ');
     const midTime = seg.start + (seg.end - seg.start) / 2;
 
-    const second = { id: 'cap_' + Date.now(), start: midTime, end: seg.end, text: secondText };
+    const second = { id: 'cap_' + Date.now(), start: midTime, end: seg.end, text: secondText, words: null, wordTimingEstimated: true };
     seg.end = midTime;
     seg.text = firstText;
+    seg.words = null; seg.wordTimingEstimated = true;
     this.segments().push(second);
     this.render();
     CSApp.saveCurrent(false);
@@ -905,6 +1219,7 @@ const CSCaptions = {
     if (!next) { CSApp.toast('No following segment to merge with.'); return; }
     seg.end = next.end;
     seg.text = (seg.text.trim() + ' ' + next.text.trim()).trim();
+    seg.words = null; seg.wordTimingEstimated = true;
     CSState.current.captions = list.filter(s => s.id !== next.id);
     this.render();
     CSApp.saveCurrent(false);
@@ -935,22 +1250,16 @@ const CSCaptions = {
 
 /* ============================================================
    Caption Studio — styles.js
-   Six animated caption presets, each with real per-word or
-   per-character behavior driven by video currentTime, plus
-   customization controls (font, size, color, position, etc).
+   Renders phrase-level captions as individual, real-time-
+   animated word spans (using the CSS keyframes from
+   caption-animations.css), plus the full Style tab UI:
+   preset picker + font/color/outline/shadow/background/
+   position/alignment/line-spacing/animation controls.
    ============================================================ */
 
 const CSStyles = {
-  PRESETS: [
-    { id: 'boldpop',  label: 'Bold Pop' },
-    { id: 'karaoke',  label: 'Karaoke' },
-    { id: 'wordhi',   label: 'Word Highlight' },
-    { id: 'bounce',   label: 'Bounce' },
-    { id: 'clean',    label: 'Clean Minimal' },
-    { id: 'typewriter', label: 'Typewriter' }
-  ],
-
   COLORS: ['#ffffff', '#2fe1c2', '#ffd166', '#ff5f6d', '#8c7bff', '#0b0b0f'],
+  activeWordIdx: -1,
 
   init() {
     this.buildPresetGrid();
@@ -963,24 +1272,24 @@ const CSStyles = {
   buildPresetGrid() {
     const grid = document.getElementById('preset-grid');
     grid.innerHTML = '';
-    this.PRESETS.forEach(p => {
+    CSEngine.STYLE_PRESETS.forEach(p => {
       const card = document.createElement('div');
       card.className = 'preset-card' + (this.style().preset === p.id ? ' selected' : '');
-      card.innerHTML = `<span class="preset-preview">${this.miniPreview(p.id)}</span><span class="preset-label">${p.label}</span>`;
+      card.innerHTML = `<span class="preset-preview" style="font-family:${p.fontFamily}; color:${p.color};">Aa</span><span class="preset-label">${p.label}</span>`;
       card.addEventListener('click', () => {
-        this.style().preset = p.id;
+        Object.assign(this.style(), {
+          preset: p.id, fontFamily: p.fontFamily, fontWeight: p.fontWeight, color: p.color,
+          highlightColor: p.highlightColor, background: p.background, outline: p.outline,
+          bgOpacity: p.bgOpacity, animation: p.animation
+        });
         document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
+        this.buildControls();
         CSApp.saveCurrent(false);
-        CSCaptions.lastShownId = null; // force rebuild
-        CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
+        this.forceRerender();
       });
       grid.appendChild(card);
     });
-  },
-
-  miniPreview(id) {
-    return { boldpop: 'Aa', karaoke: 'Aa', wordhi: 'Aa', bounce: 'Aa', clean: 'Aa', typewriter: 'Aa|' }[id];
   },
 
   buildControls() {
@@ -990,11 +1299,18 @@ const CSStyles = {
       <div class="control-row">
         <label>Font</label>
         <select class="select-input" id="ctl-font">
-          <option value="'Manrope', sans-serif">Manrope</option>
-          <option value="'Poppins', sans-serif">Poppins</option>
-          <option value="'Bebas Neue', sans-serif">Bebas Neue</option>
-          <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+          <option value="'Inter', sans-serif">Inter (Latin)</option>
+          <option value="'Cabin', sans-serif">Cabin (Latin)</option>
+          <option value="'Amiri', serif">Amiri (Urdu script)</option>
+          <option value="'Noto Kufi Arabic', sans-serif">Noto Kufi Arabic (Urdu script)</option>
+          <option value="'Lohit Devanagari', sans-serif">Lohit Devanagari (Hindi)</option>
         </select>
+      </div>
+      <div class="control-row">
+        <label>Font weight</label>
+        <div class="seg-control" id="ctl-weight">
+          <button data-v="500">Regular</button><button data-v="700">Bold</button><button data-v="800">Extra bold</button>
+        </div>
       </div>
       <div class="control-row">
         <label>Font size <span id="fs-val"></span></label>
@@ -1021,37 +1337,60 @@ const CSStyles = {
         </div>
       </div>
       <div class="control-row">
+        <label>Line spacing <span id="ls-val"></span></label>
+        <input type="range" class="slider" id="ctl-linespacing" min="1" max="2" step="0.1">
+      </div>
+      <div class="control-row">
+        <label>Animation</label>
+        <select class="select-input" id="ctl-animation"></select>
+      </div>
+      <div class="control-row">
         <label>Animation speed <span id="anim-val"></span></label>
         <input type="range" class="slider" id="ctl-animspeed" min="0.5" max="2" step="0.1">
       </div>
-      <div class="toggle-row">
-        <span>Background box</span>
-        <label class="switch"><input type="checkbox" id="ctl-bg"><span class="switch-track"></span></label>
+      <div class="control-row">
+        <label>Animation intensity <span id="animi-val"></span></label>
+        <input type="range" class="slider" id="ctl-intensity" min="0" max="2" step="0.1">
       </div>
-      <div class="toggle-row">
-        <span>Outline / shadow</span>
-        <label class="switch"><input type="checkbox" id="ctl-outline"><span class="switch-track"></span></label>
+      <div class="control-row">
+        <label>Outline thickness <span id="ol-val"></span></label>
+        <input type="range" class="slider" id="ctl-outlinewidth" min="0" max="6" step="1">
+      </div>
+      <div class="control-row">
+        <label>Shadow intensity <span id="sh-val"></span></label>
+        <input type="range" class="slider" id="ctl-shadow" min="0" max="100" step="5">
+      </div>
+      <div class="control-row">
+        <label>Background opacity <span id="bg-val"></span></label>
+        <input type="range" class="slider" id="ctl-bgopacity" min="0" max="100" step="5">
       </div>
     `;
 
     document.getElementById('ctl-font').value = s.fontFamily;
     document.getElementById('ctl-font').addEventListener('change', e => this.set('fontFamily', e.target.value));
 
-    const sizeInput = document.getElementById('ctl-size');
-    sizeInput.value = s.fontSize;
-    document.getElementById('fs-val').textContent = s.fontSize + 'px';
-    sizeInput.addEventListener('input', e => {
-      document.getElementById('fs-val').textContent = e.target.value + 'px';
-      this.set('fontSize', parseInt(e.target.value, 10));
+    const weightGroup = document.getElementById('ctl-weight');
+    weightGroup.querySelectorAll('button').forEach(btn => {
+      if (parseInt(btn.dataset.v, 10) === s.fontWeight) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        weightGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.set('fontWeight', parseInt(btn.dataset.v, 10));
+      });
     });
 
-    const animInput = document.getElementById('ctl-animspeed');
-    animInput.value = s.animSpeed;
-    document.getElementById('anim-val').textContent = s.animSpeed + 'x';
-    animInput.addEventListener('input', e => {
-      document.getElementById('anim-val').textContent = e.target.value + 'x';
-      this.set('animSpeed', parseFloat(e.target.value));
-    });
+    this.bindSlider('ctl-size', 'fs-val', 'fontSize', v => v + 'px');
+    this.bindSlider('ctl-linespacing', 'ls-val', 'lineSpacing', v => v + 'x', true);
+    this.bindSlider('ctl-animspeed', 'anim-val', 'animSpeed', v => v + 'x', true);
+    this.bindSlider('ctl-intensity', 'animi-val', 'animIntensity', v => v + 'x', true);
+    this.bindSlider('ctl-outlinewidth', 'ol-val', 'outlineWidth', v => v + 'px');
+    this.bindSlider('ctl-shadow', 'sh-val', 'shadowIntensity', v => v + '%');
+    this.bindSlider('ctl-bgopacity', 'bg-val', 'bgOpacity', v => v + '%');
+
+    const animSelect = document.getElementById('ctl-animation');
+    animSelect.innerHTML = CSEngine.ANIMATION_PRESETS.map(a => `<option value="${a.id}">${a.label}</option>`).join('');
+    animSelect.value = s.animation;
+    animSelect.addEventListener('change', e => this.set('animation', e.target.value));
 
     this.buildSwatches('ctl-color', 'color');
     this.buildSwatches('ctl-hicolor', 'highlightColor');
@@ -1068,11 +1407,18 @@ const CSStyles = {
         });
       });
     });
+  },
 
-    document.getElementById('ctl-bg').checked = s.background;
-    document.getElementById('ctl-bg').addEventListener('change', e => this.set('background', e.target.checked));
-    document.getElementById('ctl-outline').checked = s.outline;
-    document.getElementById('ctl-outline').addEventListener('change', e => this.set('outline', e.target.checked));
+  bindSlider(inputId, labelId, field, fmt, isFloat) {
+    const input = document.getElementById(inputId);
+    const s = this.style();
+    input.value = s[field];
+    document.getElementById(labelId).textContent = fmt(s[field]);
+    input.addEventListener('input', e => {
+      const v = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value, 10);
+      document.getElementById(labelId).textContent = fmt(v);
+      this.set(field, v);
+    });
   },
 
   buildSwatches(containerId, field) {
@@ -1083,7 +1429,7 @@ const CSStyles = {
       sw.className = 'swatch' + (this.style()[field] === c ? ' selected' : '');
       sw.style.background = c;
       sw.addEventListener('click', () => {
-        row.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+        row.querySelectorAll('.swatch').forEach(s2 => s2.classList.remove('selected'));
         sw.classList.add('selected');
         this.set(field, c);
       });
@@ -1094,6 +1440,10 @@ const CSStyles = {
   set(field, value) {
     this.style()[field] = value;
     CSApp.saveCurrent(false);
+    this.forceRerender();
+  },
+
+  forceRerender() {
     CSCaptions.lastShownId = null;
     CSCaptions.updateOverlay(CSApp.els.videoEl.currentTime);
   },
@@ -1107,88 +1457,61 @@ const CSStyles = {
 
   boxStyleAttr() {
     const s = this.style();
-    const bg = s.background ? 'background:rgba(10,10,14,.68); padding:8px 14px; border-radius:8px;' : '';
-    const shadow = s.outline ? 'text-shadow:0 2px 6px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9);' : '';
-    return `font-family:${s.fontFamily}; font-size:${s.fontSize}px; color:${s.color}; text-align:${s.align}; justify-content:${{left:'flex-start',center:'center',right:'flex-end'}[s.align]}; ${bg} ${shadow}`;
+    const bg = s.background ? `background:rgba(10,10,14,${(s.bgOpacity / 100).toFixed(2)}); padding:8px 14px; border-radius:8px;` : '';
+    const shadowBlur = Math.round((s.shadowIntensity / 100) * 10);
+    const shadow = s.outline && shadowBlur > 0 ? `text-shadow:0 2px ${shadowBlur}px rgba(0,0,0,.85), 0 0 ${s.outlineWidth}px rgba(0,0,0,.9);` : '';
+    const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[s.align];
+    return `font-family:${s.fontFamily}; font-weight:${s.fontWeight}; font-size:${s.fontSize}px; line-height:${s.lineSpacing}; color:${s.color}; text-align:${s.align}; justify-content:${justify}; ${bg} ${shadow}`;
   },
 
-  // Build the caption box fresh for a newly-shown segment
+  // Build the caption box fresh whenever a new segment becomes active
   renderCaptionInto(container, seg, t) {
     const s = this.style();
-    const words = seg.text.trim().split(/\s+/).filter(Boolean);
-    container.innerHTML = `<div class="cap-box preset-${s.preset}" style="display:inline-flex; flex-wrap:wrap; gap:.35em; ${this.boxStyleAttr()}"></div>`;
+    const lang = CSEngine.langInfo(CSState.current.language);
+    const words = CSEngine.getWords(seg);
+
+    container.innerHTML = `<div class="cap-box" dir="${lang.dir}" style="--caption-color:${s.color}; --caption-highlight:${s.highlightColor}; display:inline-flex; flex-wrap:wrap; gap:.3em; ${this.boxStyleAttr()}"></div>`;
     const box = container.querySelector('.cap-box');
 
+    const animClass = 'cs-' + s.animation;
     words.forEach((w, i) => {
       const span = document.createElement('span');
-      span.className = 'cap-word';
-      span.textContent = w;
+      span.className = `caption-word ${animClass}`;
+      span.textContent = w.text;
       span.dataset.idx = i;
-      if (s.preset === 'bounce') {
-        span.style.display = 'inline-block';
-        span.style.animation = `csBounceIn .5s ${(0.5 / s.animSpeed) * i}s both`;
-      }
-      if (s.preset === 'boldpop') {
-        span.style.fontWeight = '800';
-      }
+      const delaySec = Math.max(0, (w.start - t) / Math.max(0.1, s.animSpeed));
+      span.style.animationDelay = `${delaySec}s`;
+      span.style.setProperty('--cs-intensity', s.animIntensity);
       box.appendChild(span);
     });
 
-    if (s.preset === 'boldpop') {
-      box.style.animation = `csPopIn ${0.35 / s.animSpeed}s ease both`;
-    }
-    if (s.preset === 'typewriter') {
-      box.dataset.fullText = seg.text.trim();
-      box.innerHTML = '';
-    }
-
-    this.injectKeyframesOnce();
+    this._words = words;
+    this.activeWordIdx = -1;
     this.updateAnimatedCaption(container, seg, t);
   },
 
-  // Update progressive states (karaoke fill, word highlight, typewriter chars) every frame
+  // Called every frame: toggles which word is "active" without re-creating
+  // spans (so pop/slide/bounce entrance animations aren't restarted).
   updateAnimatedCaption(container, seg, t) {
-    const s = this.style();
     const box = container.querySelector('.cap-box');
     if (!box) return;
-    const progress = Math.min(1, Math.max(0, (t - seg.start) / Math.max(0.01, seg.end - seg.start)));
+    const words = this._words || CSEngine.getWords(seg);
+    const s = this.style();
+    const idx = CSEngine.activeWordIndex(words, t);
+    if (idx === this.activeWordIdx) return;
+    this.activeWordIdx = idx;
 
-    if (s.preset === 'karaoke') {
-      const words = box.querySelectorAll('.cap-word');
-      const n = words.length;
-      words.forEach((w, i) => {
-        const wordProgress = Math.min(1, Math.max(0, progress * n - i));
-        w.style.background = wordProgress > 0
-          ? `linear-gradient(90deg, ${s.highlightColor} ${wordProgress * 100}%, transparent ${wordProgress * 100}%)`
-          : 'none';
-        w.style.borderRadius = '3px';
-        w.style.padding = '0 2px';
-      });
-    } else if (s.preset === 'wordhi') {
-      const words = box.querySelectorAll('.cap-word');
-      const activeIdx = Math.min(words.length - 1, Math.floor(progress * words.length));
-      words.forEach((w, i) => {
-        w.style.background = i === activeIdx ? s.highlightColor : 'transparent';
-        w.style.color = i === activeIdx ? '#0b0b0f' : s.color;
-        w.style.borderRadius = '4px';
-        w.style.padding = '0 3px';
-      });
-    } else if (s.preset === 'typewriter') {
-      const full = box.dataset.fullText || '';
-      const chars = Math.ceil(full.length * progress);
-      box.textContent = full.slice(0, chars);
-    }
-  },
-
-  injectKeyframesOnce() {
-    if (document.getElementById('cs-keyframes')) return;
-    const style = document.createElement('style');
-    style.id = 'cs-keyframes';
-    style.textContent = `
-      @keyframes csPopIn { 0%{ transform:scale(.6); opacity:0; } 70%{ transform:scale(1.08); opacity:1; } 100%{ transform:scale(1); } }
-      @keyframes csBounceIn { 0%{ transform:translateY(14px); opacity:0; } 60%{ transform:translateY(-4px); opacity:1; } 100%{ transform:translateY(0); } }
-    `;
-    document.head.appendChild(style);
+    box.querySelectorAll('.caption-word').forEach((el, i) => {
+      const isActive = i === idx;
+      el.classList.toggle('is-active', isActive);
+      if (isActive && s.animation === 'emphasis-punch') {
+        // Retrigger the punch animation for the newly active word only
+        el.style.animation = 'none';
+        el.style.animationDelay = '0s';
+        void el.offsetWidth;
+        el.style.animation = '';
+      }
+    });
   }
 };
 
@@ -1202,9 +1525,13 @@ const CSStyles = {
 const CSEffects = {
   FADE_SECONDS: 0.6,
 
+  SVG_SPARKLE: `<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M100 12v34M100 154v34M12 100h34M154 100h34M38 38l24 24M138 138l24 24M162 38l-24 24M62 138l-24 24"/></g><circle cx="100" cy="100" r="10" fill="currentColor"/></svg>`,
+  SVG_SWOOSH: `<svg viewBox="0 0 500 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 67C135 20 275 91 488 28" stroke="currentColor" stroke-width="13" stroke-linecap="round"/></svg>`,
+
   init() {
     this.buildControls();
     this.applyFilters();
+    this.applyOverlay();
   },
 
   fx() { return CSState.current.effects; },
@@ -1225,12 +1552,6 @@ const CSEffects = {
         <span>Simple zoom (slow drift)</span>
         <label class="switch"><input type="checkbox" id="fx-zoom"><span class="switch-track"></span></label>
       </div>
-      <div class="control-row" style="margin-top:16px;">
-        <label>Caption entrance</label>
-        <div class="seg-control" id="fx-entrance">
-          <button data-v="none">None</button><button data-v="fade">Fade</button><button data-v="slide">Slide up</button>
-        </div>
-      </div>
       <div class="control-row">
         <label>Brightness <span id="fx-bright-val"></span></label>
         <input type="range" class="slider" id="fx-brightness" min="60" max="140" step="2">
@@ -1243,6 +1564,12 @@ const CSEffects = {
         <span>Blur behind captions</span>
         <label class="switch"><input type="checkbox" id="fx-blurbg"><span class="switch-track"></span></label>
       </div>
+      <div class="control-row" style="margin-top:16px;">
+        <label>SVG overlay</label>
+        <div class="seg-control" id="fx-overlay">
+          <button data-v="none">None</button><button data-v="sparkle">Sparkle</button><button data-v="swoosh">Swoosh</button>
+        </div>
+      </div>
     `;
 
     document.getElementById('fx-fadein').checked = f.fadeIn;
@@ -1251,16 +1578,6 @@ const CSEffects = {
     document.getElementById('fx-fadeout').addEventListener('change', e => this.set('fadeOut', e.target.checked));
     document.getElementById('fx-zoom').checked = f.zoom;
     document.getElementById('fx-zoom').addEventListener('change', e => this.set('zoom', e.target.checked));
-
-    const entGroup = document.getElementById('fx-entrance');
-    entGroup.querySelectorAll('button').forEach(btn => {
-      if (btn.dataset.v === f.captionEntrance) btn.classList.add('active');
-      btn.addEventListener('click', () => {
-        entGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.set('captionEntrance', btn.dataset.v);
-      });
-    });
 
     const brightness = document.getElementById('fx-brightness');
     brightness.value = f.brightness;
@@ -1280,6 +1597,16 @@ const CSEffects = {
 
     document.getElementById('fx-blurbg').checked = f.captionBlurBg;
     document.getElementById('fx-blurbg').addEventListener('change', e => this.set('captionBlurBg', e.target.checked));
+
+    const overlayGroup = document.getElementById('fx-overlay');
+    overlayGroup.querySelectorAll('button').forEach(btn => {
+      if (btn.dataset.v === f.overlay) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        overlayGroup.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.set('overlay', btn.dataset.v);
+      });
+    });
   },
 
   set(field, value) {
@@ -1287,6 +1614,23 @@ const CSEffects = {
     CSApp.saveCurrent(false);
     this.applyFilters();
     if (field === 'captionBlurBg') this.applyCaptionBlur();
+    if (field === 'overlay') this.applyOverlay();
+  },
+
+  applyOverlay() {
+    const layer = document.getElementById('svg-overlay-layer');
+    if (!layer) return;
+    const type = this.fx().overlay;
+    if (type === 'sparkle') {
+      layer.innerHTML = this.SVG_SPARKLE;
+      layer.className = 'svg-overlay-layer overlay-sparkle';
+    } else if (type === 'swoosh') {
+      layer.innerHTML = this.SVG_SWOOSH;
+      layer.className = 'svg-overlay-layer overlay-swoosh';
+    } else {
+      layer.innerHTML = '';
+      layer.className = 'svg-overlay-layer';
+    }
   },
 
   applyFilters() {
@@ -1318,6 +1662,180 @@ const CSEffects = {
     } else {
       video.style.transform = 'none';
     }
+  }
+};
+
+
+/* ============================================================
+   Caption Studio — textoverlay.js
+   Custom text overlays: user-added text independent of the
+   speech captions, with its own timing/position/style and a
+   dedicated render layer so it never gets mixed up with
+   auto-generated captions.
+   ============================================================ */
+
+const CSTextOverlay = {
+  els: {},
+  lastShownIds: '',
+
+  init() {
+    this.els.layer = document.getElementById('text-overlay-layer');
+    this.els.list = document.getElementById('text-overlay-list');
+    this.els.addBtn = document.getElementById('btn-add-text');
+    if (!this._bound) {
+      this.els.addBtn.addEventListener('click', () => this.add());
+      this._bound = true;
+    }
+    this.render();
+  },
+
+  items() { return CSState.current.textOverlays; },
+
+  add() {
+    const t = CSApp.els.videoEl.currentTime || 0;
+    const dur = CSApp.els.videoEl.duration || t + 3;
+    this.items().push({
+      id: 'txt_' + Date.now(),
+      text: 'Your text',
+      start: t,
+      end: Math.min(t + 3, dur),
+      x: 50, y: 20, // percent from left/top
+      fontFamily: "'Inter', sans-serif",
+      fontSize: 24,
+      color: '#ffffff',
+      align: 'center',
+      entrance: 'fade',
+      exit: 'fade'
+    });
+    this.render();
+    CSApp.saveCurrent(false);
+  },
+
+  render() {
+    const list = document.getElementById('text-overlay-list');
+    list.innerHTML = '';
+    if (!this.items().length) {
+      const p = document.createElement('p');
+      p.style.cssText = 'color:var(--text-dim); font-size:13.5px;';
+      p.textContent = 'No custom text yet. Add a title, label, or callout that appears independent of the spoken captions.';
+      list.appendChild(p);
+      return;
+    }
+    this.items().forEach(item => list.appendChild(this.buildRow(item)));
+  },
+
+  buildRow(item) {
+    const row = document.createElement('div');
+    row.className = 'caption-item';
+    row.innerHTML = `
+      <div class="caption-item-top">
+        <div>
+          <input class="caption-time-input" data-field="start" value="${CSCaptions.fmt(item.start)}" />
+          <span style="color:var(--text-dim)">–</span>
+          <input class="caption-time-input" data-field="end" value="${CSCaptions.fmt(item.end)}" />
+        </div>
+        <div class="caption-item-actions">
+          <button class="mini-btn danger" data-action="delete">Delete</button>
+        </div>
+      </div>
+      <textarea class="caption-text-field" rows="1" data-field="text">${CSCaptions.escape(item.text)}</textarea>
+      <div class="text-overlay-controls">
+        <select class="select-input" data-field="fontFamily">
+          <option value="'Inter', sans-serif">Inter</option>
+          <option value="'Cabin', sans-serif">Cabin</option>
+          <option value="'Amiri', serif">Amiri</option>
+          <option value="'Noto Kufi Arabic', sans-serif">Noto Kufi Arabic</option>
+          <option value="'Lohit Devanagari', sans-serif">Lohit Devanagari</option>
+        </select>
+        <div class="swatch-row" data-field="color">
+          ${CSStyles.COLORS.map(c => `<div class="swatch${item.color === c ? ' selected' : ''}" style="background:${c}" data-c="${c}"></div>`).join('')}
+        </div>
+      </div>
+      <div class="control-row">
+        <label>Size <span class="tsz-val">${item.fontSize}px</span></label>
+        <input type="range" class="slider" data-field="fontSize" min="14" max="60" value="${item.fontSize}">
+      </div>
+      <div class="control-row">
+        <label>Horizontal position <span class="tx-val">${item.x}%</span></label>
+        <input type="range" class="slider" data-field="x" min="0" max="100" value="${item.x}">
+      </div>
+      <div class="control-row">
+        <label>Vertical position <span class="ty-val">${item.y}%</span></label>
+        <input type="range" class="slider" data-field="y" min="0" max="100" value="${item.y}">
+      </div>
+      <div class="seg-control" data-field="entrance">
+        <button data-v="none">No entrance</button><button data-v="fade">Fade in</button><button data-v="slide">Slide in</button>
+      </div>
+    `;
+    row.querySelector('[data-field="fontFamily"]').value = item.fontFamily;
+    row.querySelector('[data-field="fontFamily"]').addEventListener('change', e => { item.fontFamily = e.target.value; CSApp.saveCurrent(false); });
+
+    row.querySelectorAll('[data-field="start"],[data-field="end"]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const val = CSCaptions.parseTime(inp.value.trim());
+        if (val === null) { this.render(); return; }
+        if (inp.dataset.field === 'start') item.start = val; else item.end = val;
+        this.render();
+        CSApp.saveCurrent(false);
+      });
+    });
+    row.querySelector('[data-field="text"]').addEventListener('input', e => { item.text = e.target.value; CSApp.saveCurrent(false); });
+    row.querySelectorAll('[data-field="color"] .swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        row.querySelectorAll('[data-field="color"] .swatch').forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        item.color = sw.dataset.c;
+        CSApp.saveCurrent(false);
+      });
+    });
+    row.querySelector('[data-field="fontSize"]').addEventListener('input', e => {
+      item.fontSize = parseInt(e.target.value, 10);
+      row.querySelector('.tsz-val').textContent = item.fontSize + 'px';
+      CSApp.saveCurrent(false);
+    });
+    row.querySelector('[data-field="x"]').addEventListener('input', e => {
+      item.x = parseInt(e.target.value, 10);
+      row.querySelector('.tx-val').textContent = item.x + '%';
+      CSApp.saveCurrent(false);
+    });
+    row.querySelector('[data-field="y"]').addEventListener('input', e => {
+      item.y = parseInt(e.target.value, 10);
+      row.querySelector('.ty-val').textContent = item.y + '%';
+      CSApp.saveCurrent(false);
+    });
+    row.querySelector('[data-field="entrance"]').querySelectorAll('button').forEach(btn => {
+      if (btn.dataset.v === item.entrance) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        row.querySelector('[data-field="entrance"]').querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        item.entrance = btn.dataset.v;
+        CSApp.saveCurrent(false);
+      });
+    });
+    row.querySelector('[data-action="delete"]').addEventListener('click', () => {
+      CSState.current.textOverlays = this.items().filter(i => i.id !== item.id);
+      this.render();
+      CSApp.saveCurrent(false);
+    });
+    return row;
+  },
+
+  // Called every timeupdate to draw active overlays on the DOM preview layer
+  updateOverlay(t) {
+    const active = this.items().filter(i => t >= i.start && t <= i.end);
+    const key = active.map(i => i.id).join(',');
+    if (key === this.lastShownIds) {
+      // still update entrance progress without full rebuild
+    }
+    this.lastShownIds = key;
+    this.els.layer.innerHTML = '';
+    active.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'text-overlay-item';
+      div.textContent = item.text;
+      div.style.cssText = `position:absolute; left:${item.x}%; top:${item.y}%; transform:translate(-50%,-50%); font-family:${item.fontFamily}; font-size:${item.fontSize}px; color:${item.color}; text-align:${item.align}; white-space:pre-wrap; text-shadow:0 2px 6px rgba(0,0,0,.7); pointer-events:none;`;
+      this.els.layer.appendChild(div);
+    });
   }
 };
 
@@ -1407,6 +1925,8 @@ const CSTranscribe = {
       this.showOverlay('Transcribing with Groq Whisper…');
       const form = new FormData();
       form.append('audio', audioBlob, 'audio.mp3');
+      const lang = CSEngine.langInfo(CSState.current.language);
+      if (lang.groqParam) form.append('language', lang.groqParam);
 
       const res = await fetch('/api/transcribe', { method: 'POST', body: form });
       const contentType = res.headers.get('content-type') || '';
@@ -1484,6 +2004,7 @@ const CSExport = {
     this.setProgress(0, 'Preparing…');
 
     try {
+      await this.preloadOverlayImage();
       const webmBlob = await this.recordComposite();
       this.setProgress(70, 'Converting to MP4…');
       const mp4Blob = await this.transcodeToMp4(webmBlob);
@@ -1619,49 +2140,61 @@ const CSExport = {
     ctx.restore();
     ctx.globalAlpha = 1;
 
-    const seg = CSState.current.captions.find(c => t >= c.start && t <= c.end);
-    if (seg) this.drawCaption(ctx, seg, t, w, h, s, f);
-  },
-
-  drawCaption(ctx, seg, t, w, h, s, f) {
-    const words = seg.text.trim().split(/\s+/).filter(Boolean);
-    if (!words.length) return;
-    const progress = Math.min(1, Math.max(0, (t - seg.start) / Math.max(0.01, seg.end - seg.start)));
-    const fontSize = s.fontSize * (w / 720); // scale relative to reference width
-    ctx.font = `700 ${fontSize}px ${s.fontFamily.replace(/'/g, '')}`;
-    ctx.textBaseline = 'middle';
-
-    let displayWords = words;
-    if (s.preset === 'typewriter') {
-      const full = seg.text.trim();
-      const chars = Math.ceil(full.length * progress);
-      displayWords = [full.slice(0, chars)];
+    if (f.overlay === 'sparkle' && this.overlayImg) {
+      const size = w * 0.14;
+      ctx.drawImage(this.overlayImg, w - size - w * 0.04, h * 0.04, size, size);
     }
 
-    // Wrap words into lines that fit within 88% of frame width
+    const seg = CSState.current.captions.find(c => t >= c.start && t <= c.end);
+    if (seg) this.drawCaption(ctx, seg, t, w, h, s, f);
+
+    this.drawTextOverlays(ctx, t, w, h);
+  },
+
+  // Same word-timing + preset math as the live DOM preview (js/engine.js),
+  // reproduced numerically here since canvas recording can't play real CSS
+  // keyframe animations directly.
+  drawCaption(ctx, seg, t, w, h, s, f) {
+    const words = CSEngine.getWords(seg);
+    if (!words.length) return;
+    const lang = CSEngine.langInfo(CSState.current.language);
+    const isRTL = lang.dir === 'rtl';
+    const fontSize = s.fontSize * (w / 720);
+    const weight = s.fontWeight || 700;
+    const fontName = (s.fontFamily || "'Inter'").replace(/'/g, '');
+    ctx.font = `${weight} ${fontSize}px ${fontName}`;
+    ctx.textBaseline = 'middle';
+    ctx.direction = isRTL ? 'rtl' : 'ltr';
+
+    const activeIdx = CSEngine.activeWordIndex(words, t);
+    const layoutWords = isRTL ? [...words].reverse() : words;
+    const idxMap = isRTL ? layoutWords.map((_, i) => words.length - 1 - i) : layoutWords.map((_, i) => i);
+
     const maxWidth = w * 0.88;
     const spaceWidth = ctx.measureText(' ').width;
     const lines = [[]];
     let lineWidth = 0;
-    displayWords.forEach((word, i) => {
-      const wordWidth = ctx.measureText(word).width;
+    layoutWords.forEach((word, li) => {
+      const wordWidth = ctx.measureText(word.text).width;
       if (lineWidth + wordWidth > maxWidth && lines[lines.length - 1].length) {
         lines.push([]);
         lineWidth = 0;
       }
-      lines[lines.length - 1].push({ text: word, idx: i, width: wordWidth });
+      lines[lines.length - 1].push({ text: word.text, origIdx: idxMap[li], start: word.start, width: wordWidth });
       lineWidth += wordWidth + spaceWidth;
     });
 
-    const lineHeight = fontSize * 13 / 10 * 10 / 10; // fontSize*1.3
-    const totalHeight = lines.length * fontSize * 1.3;
+    const lineStep = fontSize * (s.lineSpacing || 1.3);
+    const totalHeight = lines.length * lineStep;
     let baseY;
     if (s.position === 'top') baseY = h * 0.1 + totalHeight / 2;
     else if (s.position === 'middle') baseY = h * 0.5;
     else baseY = h * 0.88 - totalHeight / 2;
 
+    const shadowBlur = Math.round((s.shadowIntensity / 100) * 10);
+
     lines.forEach((line, li) => {
-      const y = baseY + li * fontSize * 1.3;
+      const y = baseY + li * lineStep;
       const totalLineWidth = line.reduce((a, wd) => a + wd.width, 0) + spaceWidth * (line.length - 1);
       let x;
       if (s.align === 'left') x = w * 0.06;
@@ -1669,43 +2202,79 @@ const CSExport = {
       else x = (w - totalLineWidth) / 2;
 
       if (s.background) {
-        ctx.fillStyle = 'rgba(10,10,14,0.68)';
+        ctx.fillStyle = `rgba(10,10,14,${(s.bgOpacity / 100).toFixed(2)})`;
         ctx.fillRect(x - 10, y - fontSize * 0.7, totalLineWidth + 20, fontSize * 1.3);
       }
 
       line.forEach(wd => {
+        const isActive = wd.origIdx === activeIdx;
+        const localSec = Math.max(0, t - wd.start);
+        const anim = CSEngine.wordTransform(s.animation, localSec, s.animSpeed, s.animIntensity);
+
         let color = s.color;
         let hlBg = null;
-        if (s.preset === 'karaoke') {
-          const n = words.length;
-          const wp = Math.min(1, Math.max(0, progress * n - wd.idx));
-          if (wp > 0) hlBg = s.highlightColor;
-        } else if (s.preset === 'wordhi') {
-          const activeIdx = Math.min(words.length - 1, Math.floor(progress * words.length));
-          if (wd.idx === activeIdx) { hlBg = s.highlightColor; color = '#0b0b0f'; }
+        if (s.animation === 'karaoke-highlight' && isActive) color = s.highlightColor;
+        if ((s.animation === 'word-pop' || s.animation === 'soft-bounce') && isActive) {
+          hlBg = null; // these presets emphasize via motion, not a highlight box
         }
-        if (hlBg) {
-          ctx.fillStyle = hlBg;
-          ctx.fillRect(x - 3, y - fontSize * 0.6, wd.width + 6, fontSize * 1.1);
-        }
-        if (s.outline) {
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, Math.min(1, anim.opacity));
+        if (s.outline && shadowBlur > 0) {
           ctx.shadowColor = 'rgba(0,0,0,0.85)';
-          ctx.shadowBlur = 6;
-        } else {
-          ctx.shadowBlur = 0;
+          ctx.shadowBlur = shadowBlur;
         }
-        let drawY = y;
-        if (s.preset === 'bounce') {
-          const stagger = 0.12;
-          const local = Math.min(1, Math.max(0, progress * words.length / (words.length || 1) - wd.idx * stagger));
-          drawY = y + (1 - local) * 14;
+        if (s.animation === 'glow-pulse' && isActive && anim.glow > 0) {
+          ctx.shadowColor = s.highlightColor;
+          ctx.shadowBlur = Math.max(shadowBlur, anim.glow);
         }
+
+        const cx = x + wd.width / 2;
+        const cy = y + (anim.translateY || 0);
+        ctx.translate(cx, cy);
+        ctx.scale(anim.scale || 1, anim.scale || 1);
         ctx.fillStyle = color;
-        ctx.fillText(wd.text, x, drawY);
+        ctx.fillText(wd.text, -wd.width / 2, 0);
+        ctx.restore();
+
         x += wd.width + spaceWidth;
       });
     });
-    ctx.shadowBlur = 0;
+  },
+
+  drawTextOverlays(ctx, t, w, h) {
+    const items = (CSState.current.textOverlays || []).filter(o => t >= o.start && t <= o.end);
+    items.forEach(o => {
+      const localSec = t - o.start;
+      let alpha = 1, ty = 0;
+      if (o.entrance === 'fade') alpha = Math.min(1, localSec / 0.3);
+      if (o.entrance === 'slide') { alpha = Math.min(1, localSec / 0.3); ty = (1 - Math.min(1, localSec / 0.3)) * 16; }
+      const fontSize = o.fontSize * (w / 720);
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+      ctx.font = `700 ${fontSize}px ${(o.fontFamily || "'Inter'").replace(/'/g, '')}`;
+      ctx.textAlign = o.align || 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.7)';
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = o.color;
+      ctx.fillText(o.text, (o.x / 100) * w, (o.y / 100) * h + ty);
+      ctx.restore();
+    });
+  },
+
+  async preloadOverlayImage() {
+    const type = CSState.current.effects.overlay;
+    if (type === 'none') { this.overlayImg = null; return; }
+    const svg = type === 'sparkle' ? CSEffects.SVG_SPARKLE : CSEffects.SVG_SWOOSH;
+    const colored = svg.replace('<svg ', `<svg style="color:${CSState.current.style.highlightColor}" `);
+    const img = new Image();
+    await new Promise((resolve) => {
+      img.onload = resolve;
+      img.onerror = resolve;
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(colored)));
+    });
+    this.overlayImg = img;
   },
 
   // ---------- Step 2: transcode webm -> mp4 with ffmpeg.wasm ----------
