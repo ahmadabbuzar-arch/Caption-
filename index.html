@@ -685,6 +685,32 @@ const CSEngine = {
     return idx;
   },
 
+  // Whisper's own "segments" are often full sentences (10-30+ words), not
+  // short caption-sized phrases — that's what was rendering as one giant
+  // permanent text block instead of readable captions that disappear.
+  // This regroups every segment into short chunks (default 6 words) using
+  // real or estimated per-word timestamps, so each chunk gets its own
+  // start/end and the on-screen caption actually clears between phrases.
+  rechunk(rawSegments, maxWords) {
+    maxWords = maxWords || 6;
+    const out = [];
+    rawSegments.forEach(seg => {
+      const words = this.getWords(seg);
+      if (!words.length) return;
+      for (let i = 0; i < words.length; i += maxWords) {
+        const chunkWords = words.slice(i, i + maxWords);
+        out.push({
+          start: chunkWords[0].start,
+          end: chunkWords[chunkWords.length - 1].end,
+          text: chunkWords.map(w => w.text).join(' '),
+          words: seg.words ? chunkWords : null,
+          wordTimingEstimated: !seg.words
+        });
+      }
+    });
+    return out;
+  },
+
   // ---------- Easing (numeric mirrors of caption-animations.css keyframes,
   // used by the canvas export renderer, which can't play real CSS animations) ----------
   easeOutCubic(x) { return 1 - Math.pow(1 - x, 3); },
@@ -1027,13 +1053,22 @@ const CSCaptions = {
   },
 
   setFromTranscript(segments) {
-    CSState.current.captions = segments.map((s, i) => ({
-      id: 'cap_' + Date.now() + '_' + i,
+    const raw = segments.map(s => ({
       start: s.start,
       end: s.end,
       text: s.text.trim(),
-      words: Array.isArray(s.words) && s.words.length ? s.words : null,
-      wordTimingEstimated: !(Array.isArray(s.words) && s.words.length)
+      words: Array.isArray(s.words) && s.words.length ? s.words : null
+    }));
+    // Break long Whisper sentences into short, readable caption phrases
+    // that actually clear between phrases instead of stacking up.
+    const chunked = CSEngine.rechunk(raw, 6);
+    CSState.current.captions = chunked.map((s, i) => ({
+      id: 'cap_' + Date.now() + '_' + i,
+      start: s.start,
+      end: s.end,
+      text: s.text,
+      words: s.words,
+      wordTimingEstimated: s.wordTimingEstimated
     }));
     this.applyLanguageDefaults();
     this.render();
