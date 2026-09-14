@@ -32,10 +32,11 @@ module.exports = async (req, res) => {
     return;
   }
 
-  let audioPath;
+  let audioPath, language;
   try {
-    const { path } = await parseUpload(req);
-    audioPath = path;
+    const parsed = await parseUpload(req);
+    audioPath = parsed.path;
+    language = parsed.fields.language || null;
   } catch (err) {
     res.status(400).json({ error: 'Could not read the uploaded audio: ' + err.message });
     return;
@@ -54,8 +55,16 @@ module.exports = async (req, res) => {
     form.append('file', new Blob([fileBuffer], { type: 'audio/mp3' }), 'audio.mp3');
     form.append('model', 'whisper-large-v3-turbo');
     form.append('response_format', 'verbose_json');
-    // No 'language' field is sent — Groq Whisper auto-detects, which is
-    // what lets Hindi, English, and Hinglish speech all be picked up.
+    // Ask for word-level timestamps in addition to segments. If the API
+    // version in use doesn't support this, it's simply ignored server-side
+    // and we fall back to evenly-estimated word timing (clearly flagged to
+    // the user in the UI — never presented as if it were exact).
+    form.append('timestamp_granularities[]', 'segment');
+    form.append('timestamp_granularities[]', 'word');
+    // Only forwarded for languages Whisper actually has a native mode for
+    // (see engine.js LANGUAGES) — 'auto' and the two experimental options
+    // send no language param and let the model auto-detect.
+    if (language) form.append('language', language);
 
     const groqRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -76,11 +85,23 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const segments = (data.segments || []).map(s => ({
-      start: s.start,
-      end: s.end,
-      text: (s.text || '').trim()
-    })).filter(s => s.text.length > 0);
+    // Group top-level word timestamps (when the API returned them) into
+    // each segment by time range, so the client gets real word-level
+    // start/end for karaoke-style highlighting instead of an estimate.
+    const allWords = Array.isArray(data.words) ? data.words : null;
+
+    const segments = (data.segments || []).map(s => {
+      const text = (s.text || '').trim();
+      let words = null;
+      if (allWords) {
+        words = allWords
+          .filter(w => w.start >= s.start - 0.05 && w.start < s.end + 0.05)
+          .map(w => ({ text: (w.word || '').trim(), start: w.start, end: w.end }))
+          .filter(w => w.text.length > 0);
+        if (!words.length) words = null;
+      }
+      return { start: s.start, end: s.end, text, words };
+    }).filter(s => s.text.length > 0);
 
     res.status(200).json({ segments, language: data.language || null });
   } catch (err) {
@@ -114,7 +135,8 @@ function parseUpload(req) {
       if (err) { reject(err); return; }
       const file = files.audio && (Array.isArray(files.audio) ? files.audio[0] : files.audio);
       if (!file) { reject(new Error('no audio file was included in the request.')); return; }
-      resolve({ path: file.filepath || file.path });
+      const languageField = fields.language && (Array.isArray(fields.language) ? fields.language[0] : fields.language);
+      resolve({ path: file.filepath || file.path, fields: { language: languageField || null } });
     });
   });
 }
