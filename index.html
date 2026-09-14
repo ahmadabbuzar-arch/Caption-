@@ -249,6 +249,7 @@ select.select-input, input.text-input-full{
   z-index:100; box-shadow:0 6px 20px rgba(0,0,0,.4);
 }
 .toast.hidden{ display:none; }
+.hidden{ display:none !important; }
 
 @media (min-width:640px){
   .home-hero h1{ font-size:38px; }
@@ -388,7 +389,8 @@ select.select-input, input.text-input-full{
     <div class="panel" id="panel-style">
       <div class="panel-header"><h3>Style</h3></div>
       <div class="preset-grid" id="preset-grid"></div>
-      <div class="style-controls" id="style-controls"></div>
+      <div id="customize-toggle-wrap"></div>
+      <div class="style-controls hidden" id="style-controls"></div>
     </div>
 
     <div class="panel" id="panel-effects">
@@ -547,7 +549,7 @@ const CSState = {
     if (!project.language) project.language = 'auto';
     if (!project.textOverlays) project.textOverlays = [];
     if (!project.captions) project.captions = [];
-    const styleDefaults = { fontWeight: 700, outlineWidth: 2, shadowIntensity: 60, bgOpacity: 55, lineSpacing: 1.3, animation: 'minimal-fade', animIntensity: 1, direction: 'ltr' };
+    const styleDefaults = { fontWeight: 700, outlineWidth: 2, shadowIntensity: 60, bgOpacity: 55, lineSpacing: 1.3, animation: 'minimal-fade', animIntensity: 1, direction: 'ltr', gradient: null };
     project.style = Object.assign({}, styleDefaults, project.style || {});
     const fxDefaults = { overlay: 'none' };
     project.effects = Object.assign({}, fxDefaults, project.effects || {});
@@ -581,6 +583,7 @@ const CSState = {
         fontSize: 26,
         color: '#ffffff',
         highlightColor: '#2fe1c2',
+        gradient: null,
         outlineWidth: 2,
         shadowIntensity: 60,
         bgOpacity: 55,
@@ -600,7 +603,6 @@ const CSState = {
         zoom: false,
         brightness: 100,
         contrast: 100,
-        captionBlurBg: false,
         overlay: 'none' // 'none' | 'sparkle' | 'swoosh'
       }
     };
@@ -634,13 +636,12 @@ const CSEngine = {
   ],
 
   STYLE_PRESETS: [
-    { id: 'clean',   label: 'Clean White',   fontFamily: "'Inter', sans-serif",   fontWeight: 700, color: '#ffffff', highlightColor: '#ffffff', background: false, outline: true,  bgOpacity: 0,  animation: 'minimal-fade' },
-    { id: 'boldhi',  label: 'Bold Highlight', fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#ffd166', background: true,  outline: true,  bgOpacity: 60, animation: 'word-pop' },
-    { id: 'karaoke', label: 'Karaoke',        fontFamily: "'Inter', sans-serif",  fontWeight: 700, color: '#ffffff', highlightColor: '#2fe1c2', background: false, outline: true,  bgOpacity: 0,  animation: 'karaoke-highlight' },
-    { id: 'minimal', label: 'Minimal',        fontFamily: "'Inter', sans-serif",  fontWeight: 500, color: '#ffffff', highlightColor: '#ffffff', background: false, outline: false, bgOpacity: 0,  animation: 'minimal-fade' },
-    { id: 'modpop',  label: 'Modern Pop',     fontFamily: "'Cabin', sans-serif",  fontWeight: 700, color: '#0b0b0f', highlightColor: '#ff5f6d', background: true,  outline: false, bgOpacity: 90, animation: 'soft-bounce' },
-    { id: 'cinema',  label: 'Cinematic',      fontFamily: "'Cabin', sans-serif",  fontWeight: 600, color: '#f4f1ea', highlightColor: '#f4f1ea', background: false, outline: true,  bgOpacity: 0,  animation: 'smooth-slide' },
-    { id: 'neon',    label: 'Neon Accent',    fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#8c7bff', background: false, outline: true,  bgOpacity: 0,  animation: 'glow-pulse' }
+    { id: 'clean',   label: 'Clean White',   fontFamily: "'Inter', sans-serif",  fontWeight: 700, color: '#ffffff', highlightColor: '#ffffff', gradient: null, background: false, outline: true,  bgOpacity: 0,  animation: 'minimal-fade' },
+    { id: 'boldhi',  label: 'Bold Yellow',   fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#ffd166', gradient: null, background: true,  outline: true,  bgOpacity: 60, animation: 'word-pop' },
+    { id: 'sunset',  label: 'Sunset Gradient', fontFamily: "'Inter', sans-serif", fontWeight: 800, color: '#ffffff', highlightColor: '#ffffff', gradient: { from: '#ff5f6d', to: '#ffd166' }, background: false, outline: true, bgOpacity: 0, animation: 'soft-bounce' },
+    { id: 'ocean',   label: 'Ocean Gradient', fontFamily: "'Inter', sans-serif", fontWeight: 800, color: '#ffffff', highlightColor: '#ffffff', gradient: { from: '#2fe1c2', to: '#8c7bff' }, background: false, outline: true, bgOpacity: 0, animation: 'smooth-slide' },
+    { id: 'karaoke', label: 'Karaoke',        fontFamily: "'Inter', sans-serif",  fontWeight: 700, color: '#ffffff', highlightColor: '#2fe1c2', gradient: null, background: false, outline: true,  bgOpacity: 0,  animation: 'karaoke-highlight' },
+    { id: 'neon',    label: 'Neon Glow',      fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#8c7bff', gradient: null, background: false, outline: true,  bgOpacity: 0,  animation: 'glow-pulse' }
   ],
 
   ANIMATION_PRESETS: [
@@ -1285,19 +1286,21 @@ const CSCaptions = {
 
 /* ============================================================
    Caption Studio — styles.js
-   Renders phrase-level captions as individual, real-time-
-   animated word spans (using the CSS keyframes from
-   caption-animations.css), plus the full Style tab UI:
-   preset picker + font/color/outline/shadow/background/
-   position/alignment/line-spacing/animation controls.
+   Simple by default: 6 tap-to-apply templates (font + colors +
+   animation bundled together, CapCut-style). A collapsed
+   "Customize" section underneath has the full control set for
+   anyone who wants to fine-tune. Also renders the real per-word
+   CSS keyframe animations and optional 2-color gradient text.
    ============================================================ */
 
 const CSStyles = {
   COLORS: ['#ffffff', '#2fe1c2', '#ffd166', '#ff5f6d', '#8c7bff', '#0b0b0f'],
   activeWordIdx: -1,
+  customizeOpen: false,
 
   init() {
     this.buildPresetGrid();
+    this.buildCustomizeToggle();
     this.buildControls();
     this.applyPositionClass();
   },
@@ -1310,12 +1313,15 @@ const CSStyles = {
     CSEngine.STYLE_PRESETS.forEach(p => {
       const card = document.createElement('div');
       card.className = 'preset-card' + (this.style().preset === p.id ? ' selected' : '');
-      card.innerHTML = `<span class="preset-preview" style="font-family:${p.fontFamily}; color:${p.color};">Aa</span><span class="preset-label">${p.label}</span>`;
+      const swatchStyle = p.gradient
+        ? `background:linear-gradient(90deg, ${p.gradient.from}, ${p.gradient.to}); -webkit-background-clip:text; background-clip:text; color:transparent;`
+        : `color:${p.color};`;
+      card.innerHTML = `<span class="preset-preview" style="font-family:${p.fontFamily}; font-weight:${p.fontWeight}; ${swatchStyle}">Aa</span><span class="preset-label">${p.label}</span>`;
       card.addEventListener('click', () => {
         Object.assign(this.style(), {
           preset: p.id, fontFamily: p.fontFamily, fontWeight: p.fontWeight, color: p.color,
-          highlightColor: p.highlightColor, background: p.background, outline: p.outline,
-          bgOpacity: p.bgOpacity, animation: p.animation
+          highlightColor: p.highlightColor, gradient: p.gradient, background: p.background,
+          outline: p.outline, bgOpacity: p.bgOpacity, animation: p.animation
         });
         document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
@@ -1327,8 +1333,20 @@ const CSStyles = {
     });
   },
 
+  buildCustomizeToggle() {
+    const wrap = document.getElementById('customize-toggle-wrap');
+    wrap.innerHTML = `<button class="btn btn-small" id="btn-customize-toggle" style="width:100%; margin:14px 0;">Customize ▾</button>`;
+    const btn = document.getElementById('btn-customize-toggle');
+    btn.addEventListener('click', () => {
+      this.customizeOpen = !this.customizeOpen;
+      document.getElementById('style-controls').classList.toggle('hidden', !this.customizeOpen);
+      btn.textContent = this.customizeOpen ? 'Customize ▴' : 'Customize ▾';
+    });
+  },
+
   buildControls() {
     const wrap = document.getElementById('style-controls');
+    wrap.classList.toggle('hidden', !this.customizeOpen);
     const s = this.style();
     wrap.innerHTML = `
       <div class="control-row">
@@ -1360,6 +1378,17 @@ const CSStyles = {
         <div class="swatch-row" id="ctl-hicolor"></div>
       </div>
       <div class="control-row">
+        <label>Two-color gradient text</label>
+        <div class="toggle-row" style="padding:0 0 10px;">
+          <span>Enable gradient</span>
+          <label class="switch"><input type="checkbox" id="ctl-gradient-on"><span class="switch-track"></span></label>
+        </div>
+        <div id="gradient-swatches" class="hidden">
+          <div class="swatch-row" id="ctl-gradfrom" style="margin-bottom:8px;"></div>
+          <div class="swatch-row" id="ctl-gradto"></div>
+        </div>
+      </div>
+      <div class="control-row">
         <label>Position</label>
         <div class="seg-control" id="ctl-position">
           <button data-v="top">Top</button><button data-v="middle">Middle</button><button data-v="bottom">Bottom</button>
@@ -1372,10 +1401,6 @@ const CSStyles = {
         </div>
       </div>
       <div class="control-row">
-        <label>Line spacing <span id="ls-val"></span></label>
-        <input type="range" class="slider" id="ctl-linespacing" min="1" max="2" step="0.1">
-      </div>
-      <div class="control-row">
         <label>Animation</label>
         <select class="select-input" id="ctl-animation"></select>
       </div>
@@ -1384,16 +1409,8 @@ const CSStyles = {
         <input type="range" class="slider" id="ctl-animspeed" min="0.5" max="2" step="0.1">
       </div>
       <div class="control-row">
-        <label>Animation intensity <span id="animi-val"></span></label>
-        <input type="range" class="slider" id="ctl-intensity" min="0" max="2" step="0.1">
-      </div>
-      <div class="control-row">
         <label>Outline thickness <span id="ol-val"></span></label>
         <input type="range" class="slider" id="ctl-outlinewidth" min="0" max="6" step="1">
-      </div>
-      <div class="control-row">
-        <label>Shadow intensity <span id="sh-val"></span></label>
-        <input type="range" class="slider" id="ctl-shadow" min="0" max="100" step="5">
       </div>
       <div class="control-row">
         <label>Background opacity <span id="bg-val"></span></label>
@@ -1415,11 +1432,8 @@ const CSStyles = {
     });
 
     this.bindSlider('ctl-size', 'fs-val', 'fontSize', v => v + 'px');
-    this.bindSlider('ctl-linespacing', 'ls-val', 'lineSpacing', v => v + 'x', true);
     this.bindSlider('ctl-animspeed', 'anim-val', 'animSpeed', v => v + 'x', true);
-    this.bindSlider('ctl-intensity', 'animi-val', 'animIntensity', v => v + 'x', true);
     this.bindSlider('ctl-outlinewidth', 'ol-val', 'outlineWidth', v => v + 'px');
-    this.bindSlider('ctl-shadow', 'sh-val', 'shadowIntensity', v => v + '%');
     this.bindSlider('ctl-bgopacity', 'bg-val', 'bgOpacity', v => v + '%');
 
     const animSelect = document.getElementById('ctl-animation');
@@ -1429,6 +1443,23 @@ const CSStyles = {
 
     this.buildSwatches('ctl-color', 'color');
     this.buildSwatches('ctl-hicolor', 'highlightColor');
+
+    const gradOn = document.getElementById('ctl-gradient-on');
+    const gradSwatchWrap = document.getElementById('gradient-swatches');
+    gradOn.checked = !!s.gradient;
+    gradSwatchWrap.classList.toggle('hidden', !s.gradient);
+    gradOn.addEventListener('change', e => {
+      if (e.target.checked) {
+        this.style().gradient = { from: s.color || '#ff5f6d', to: s.highlightColor || '#ffd166' };
+      } else {
+        this.style().gradient = null;
+      }
+      gradSwatchWrap.classList.toggle('hidden', !this.style().gradient);
+      CSApp.saveCurrent(false);
+      this.forceRerender();
+    });
+    this.buildGradientSwatches('ctl-gradfrom', 'from');
+    this.buildGradientSwatches('ctl-gradto', 'to');
 
     ['position', 'align'].forEach(field => {
       const group = document.getElementById('ctl-' + field);
@@ -1472,6 +1503,26 @@ const CSStyles = {
     });
   },
 
+  buildGradientSwatches(containerId, endpoint) {
+    const row = document.getElementById(containerId);
+    row.innerHTML = '';
+    this.COLORS.forEach(c => {
+      const sw = document.createElement('div');
+      const current = this.style().gradient && this.style().gradient[endpoint];
+      sw.className = 'swatch' + (current === c ? ' selected' : '');
+      sw.style.background = c;
+      sw.addEventListener('click', () => {
+        row.querySelectorAll('.swatch').forEach(s2 => s2.classList.remove('selected'));
+        sw.classList.add('selected');
+        if (!this.style().gradient) this.style().gradient = { from: '#ff5f6d', to: '#ffd166' };
+        this.style().gradient[endpoint] = c;
+        CSApp.saveCurrent(false);
+        this.forceRerender();
+      });
+      row.appendChild(sw);
+    });
+  },
+
   set(field, value) {
     this.style()[field] = value;
     CSApp.saveCurrent(false);
@@ -1496,7 +1547,15 @@ const CSStyles = {
     const shadowBlur = Math.round((s.shadowIntensity / 100) * 10);
     const shadow = s.outline && shadowBlur > 0 ? `text-shadow:0 2px ${shadowBlur}px rgba(0,0,0,.85), 0 0 ${s.outlineWidth}px rgba(0,0,0,.9);` : '';
     const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[s.align];
-    return `font-family:${s.fontFamily}; font-weight:${s.fontWeight}; font-size:${s.fontSize}px; line-height:${s.lineSpacing}; color:${s.color}; text-align:${s.align}; justify-content:${justify}; ${bg} ${shadow}`;
+    return `font-family:${s.fontFamily}; font-weight:${s.fontWeight}; font-size:${s.fontSize}px; line-height:${s.lineSpacing}; text-align:${s.align}; justify-content:${justify}; ${bg} ${shadow}`;
+  },
+
+  wordStyleAttr() {
+    const s = this.style();
+    if (s.gradient) {
+      return `background-image:linear-gradient(90deg, ${s.gradient.from}, ${s.gradient.to}); -webkit-background-clip:text; background-clip:text; color:transparent;`;
+    }
+    return `color:${s.color};`;
   },
 
   // Build the caption box fresh whenever a new segment becomes active
@@ -1509,14 +1568,15 @@ const CSStyles = {
     const box = container.querySelector('.cap-box');
 
     const animClass = 'cs-' + s.animation;
+    const wordStyle = this.wordStyleAttr();
     words.forEach((w, i) => {
       const span = document.createElement('span');
       span.className = `caption-word ${animClass}`;
+      span.style.cssText = wordStyle;
       span.textContent = w.text;
       span.dataset.idx = i;
       const delaySec = Math.max(0, (w.start - t) / Math.max(0.1, s.animSpeed));
       span.style.animationDelay = `${delaySec}s`;
-      span.style.setProperty('--cs-intensity', s.animIntensity);
       box.appendChild(span);
     });
 
@@ -1540,7 +1600,6 @@ const CSStyles = {
       const isActive = i === idx;
       el.classList.toggle('is-active', isActive);
       if (isActive && s.animation === 'emphasis-punch') {
-        // Retrigger the punch animation for the newly active word only
         el.style.animation = 'none';
         el.style.animationDelay = '0s';
         void el.offsetWidth;
@@ -1553,12 +1612,15 @@ const CSStyles = {
 
 /* ============================================================
    Caption Studio — effects.js
-   Lightweight video/caption effects, applied live to the
-   preview and re-applied during export.
+   Kept deliberately simple: 4 options only (fade, zoom, a single
+   "color boost" toggle instead of separate brightness/contrast
+   sliders, and a decoration picker) rather than a dense panel.
    ============================================================ */
 
 const CSEffects = {
   FADE_SECONDS: 0.6,
+  BOOST_BRIGHTNESS: 108,
+  BOOST_CONTRAST: 116,
 
   SVG_SPARKLE: `<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="5" stroke-linecap="round"><path d="M100 12v34M100 154v34M12 100h34M154 100h34M38 38l24 24M138 138l24 24M162 38l-24 24M62 138l-24 24"/></g><circle cx="100" cy="100" r="10" fill="currentColor"/></svg>`,
   SVG_SWOOSH: `<svg viewBox="0 0 500 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 67C135 20 275 91 488 28" stroke="currentColor" stroke-width="13" stroke-linecap="round"/></svg>`,
@@ -1574,64 +1636,46 @@ const CSEffects = {
   buildControls() {
     const wrap = document.getElementById('effects-controls');
     const f = this.fx();
+    const boosted = f.brightness > 100 || f.contrast > 100;
     wrap.innerHTML = `
       <div class="toggle-row">
-        <span>Fade in</span>
-        <label class="switch"><input type="checkbox" id="fx-fadein"><span class="switch-track"></span></label>
+        <span>Fade in / out</span>
+        <label class="switch"><input type="checkbox" id="fx-fade"><span class="switch-track"></span></label>
       </div>
       <div class="toggle-row">
-        <span>Fade out</span>
-        <label class="switch"><input type="checkbox" id="fx-fadeout"><span class="switch-track"></span></label>
-      </div>
-      <div class="toggle-row">
-        <span>Simple zoom (slow drift)</span>
+        <span>Zoom &amp; pan</span>
         <label class="switch"><input type="checkbox" id="fx-zoom"><span class="switch-track"></span></label>
       </div>
-      <div class="control-row">
-        <label>Brightness <span id="fx-bright-val"></span></label>
-        <input type="range" class="slider" id="fx-brightness" min="60" max="140" step="2">
-      </div>
-      <div class="control-row">
-        <label>Contrast <span id="fx-contrast-val"></span></label>
-        <input type="range" class="slider" id="fx-contrast" min="60" max="140" step="2">
-      </div>
       <div class="toggle-row">
-        <span>Blur behind captions</span>
-        <label class="switch"><input type="checkbox" id="fx-blurbg"><span class="switch-track"></span></label>
+        <span>Color boost</span>
+        <label class="switch"><input type="checkbox" id="fx-boost"><span class="switch-track"></span></label>
       </div>
       <div class="control-row" style="margin-top:16px;">
-        <label>SVG overlay</label>
+        <label>Decoration</label>
         <div class="seg-control" id="fx-overlay">
           <button data-v="none">None</button><button data-v="sparkle">Sparkle</button><button data-v="swoosh">Swoosh</button>
         </div>
       </div>
     `;
 
-    document.getElementById('fx-fadein').checked = f.fadeIn;
-    document.getElementById('fx-fadein').addEventListener('change', e => this.set('fadeIn', e.target.checked));
-    document.getElementById('fx-fadeout').checked = f.fadeOut;
-    document.getElementById('fx-fadeout').addEventListener('change', e => this.set('fadeOut', e.target.checked));
+    document.getElementById('fx-fade').checked = f.fadeIn && f.fadeOut;
+    document.getElementById('fx-fade').addEventListener('change', e => {
+      f.fadeIn = e.target.checked;
+      f.fadeOut = e.target.checked;
+      CSApp.saveCurrent(false);
+      this.applyFilters();
+    });
+
     document.getElementById('fx-zoom').checked = f.zoom;
     document.getElementById('fx-zoom').addEventListener('change', e => this.set('zoom', e.target.checked));
 
-    const brightness = document.getElementById('fx-brightness');
-    brightness.value = f.brightness;
-    document.getElementById('fx-bright-val').textContent = f.brightness + '%';
-    brightness.addEventListener('input', e => {
-      document.getElementById('fx-bright-val').textContent = e.target.value + '%';
-      this.set('brightness', parseInt(e.target.value, 10));
+    document.getElementById('fx-boost').checked = boosted;
+    document.getElementById('fx-boost').addEventListener('change', e => {
+      f.brightness = e.target.checked ? this.BOOST_BRIGHTNESS : 100;
+      f.contrast = e.target.checked ? this.BOOST_CONTRAST : 100;
+      CSApp.saveCurrent(false);
+      this.applyFilters();
     });
-
-    const contrast = document.getElementById('fx-contrast');
-    contrast.value = f.contrast;
-    document.getElementById('fx-contrast-val').textContent = f.contrast + '%';
-    contrast.addEventListener('input', e => {
-      document.getElementById('fx-contrast-val').textContent = e.target.value + '%';
-      this.set('contrast', parseInt(e.target.value, 10));
-    });
-
-    document.getElementById('fx-blurbg').checked = f.captionBlurBg;
-    document.getElementById('fx-blurbg').addEventListener('change', e => this.set('captionBlurBg', e.target.checked));
 
     const overlayGroup = document.getElementById('fx-overlay');
     overlayGroup.querySelectorAll('button').forEach(btn => {
@@ -1648,7 +1692,6 @@ const CSEffects = {
     this.fx()[field] = value;
     CSApp.saveCurrent(false);
     this.applyFilters();
-    if (field === 'captionBlurBg') this.applyCaptionBlur();
     if (field === 'overlay') this.applyOverlay();
   },
 
@@ -1656,12 +1699,15 @@ const CSEffects = {
     const layer = document.getElementById('svg-overlay-layer');
     if (!layer) return;
     const type = this.fx().overlay;
+    const color = CSState.current.style.highlightColor || '#ffd166';
     if (type === 'sparkle') {
       layer.innerHTML = this.SVG_SPARKLE;
       layer.className = 'svg-overlay-layer overlay-sparkle';
+      layer.style.color = color;
     } else if (type === 'swoosh') {
       layer.innerHTML = this.SVG_SWOOSH;
       layer.className = 'svg-overlay-layer overlay-swoosh';
+      layer.style.color = color;
     } else {
       layer.innerHTML = '';
       layer.className = 'svg-overlay-layer';
@@ -1671,13 +1717,6 @@ const CSEffects = {
   applyFilters() {
     const f = this.fx();
     CSApp.els.videoEl.style.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%)`;
-    this.applyCaptionBlur();
-  },
-
-  applyCaptionBlur() {
-    const overlay = document.getElementById('caption-overlay');
-    const box = overlay.querySelector('.cap-box');
-    if (box) box.style.backdropFilter = this.fx().captionBlurBg ? 'blur(6px)' : 'none';
   },
 
   // Called on every timeupdate to drive fade/zoom relative to full clip duration
@@ -2247,11 +2286,7 @@ const CSExport = {
         const anim = CSEngine.wordTransform(s.animation, localSec, s.animSpeed, s.animIntensity);
 
         let color = s.color;
-        let hlBg = null;
         if (s.animation === 'karaoke-highlight' && isActive) color = s.highlightColor;
-        if ((s.animation === 'word-pop' || s.animation === 'soft-bounce') && isActive) {
-          hlBg = null; // these presets emphasize via motion, not a highlight box
-        }
 
         ctx.save();
         ctx.globalAlpha = Math.max(0, Math.min(1, anim.opacity));
@@ -2268,7 +2303,14 @@ const CSExport = {
         const cy = y + (anim.translateY || 0);
         ctx.translate(cx, cy);
         ctx.scale(anim.scale || 1, anim.scale || 1);
-        ctx.fillStyle = color;
+        if (s.gradient && !(s.animation === 'karaoke-highlight' && isActive)) {
+          const grad = ctx.createLinearGradient(-wd.width / 2, 0, wd.width / 2, 0);
+          grad.addColorStop(0, s.gradient.from);
+          grad.addColorStop(1, s.gradient.to);
+          ctx.fillStyle = grad;
+        } else {
+          ctx.fillStyle = color;
+        }
         ctx.fillText(wd.text, -wd.width / 2, 0);
         ctx.restore();
 
