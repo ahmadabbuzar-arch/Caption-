@@ -184,14 +184,20 @@ input{ font-family:inherit; }
 }
 
 /* Style panel */
-.preset-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+.preset-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
 .preset-card{
-  background:var(--surface); border:1.5px solid var(--line); border-radius:12px; padding:12px 6px;
-  text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;
+  background:var(--surface); border:1.5px solid var(--line); border-radius:14px; padding:8px;
+  text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:7px;
 }
 .preset-card.selected{ border-color:var(--accent); background:var(--surface-2); }
-.preset-preview{ font-size:12.5px; font-weight:700; color:var(--text); }
-.preset-label{ font-size:11px; color:var(--text-dim); }
+.preset-mini-frame{
+  width:100%; height:78px; border-radius:9px; background:#0a0a0e;
+  background-image: radial-gradient(circle at 30% 20%, rgba(255,255,255,.05), transparent 60%);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; padding:4px 6%;
+}
+.preset-mini-frame .cap-box{ max-width:100%; }
+.preset-label{ font-size:11.5px; color:var(--text-dim); font-weight:600; }
+.preset-card.selected .preset-label{ color:var(--text); }
 
 .control-row{ margin-bottom:16px; }
 .control-row label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:7px; font-weight:600; }
@@ -257,10 +263,13 @@ select.select-input, input.text-input-full{
 }
 
 /* ================= Caption word animations (Effects & Animation Pack) ================= */
-.caption-word{ display:inline-block; will-change:transform,opacity,filter; }
-.cs-karaoke-highlight.is-active{ color:var(--caption-highlight,#ffe45c); transition:color .1s linear; }
+/* Highlight colour for the active word is applied directly via inline style
+   (see CSStyles.applyActiveWordVisuals) so it works the same for every
+   animation preset, not just karaoke — this keeps the live preview, the
+   template picker previews, and the canvas export all in sync. */
+.caption-word{ display:inline-block; will-change:transform,opacity,filter; transition:color .1s linear, background-color .12s linear; border-radius:.22em; }
+.caption-word.is-active-pill{ padding:.02em .22em; }
 .cs-glow-pulse.is-active{ animation:cs-glow-pulse .5s ease-in-out infinite; }
-.cs-emphasis-punch.is-active{ color:var(--caption-highlight,#ffe45c); }
 
 @keyframes cs-word-pop{0%{opacity:0;transform:translateY(5px) scale(.88)}65%{opacity:1;transform:translateY(-1px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}
 .cs-word-pop{ animation:cs-word-pop .24s cubic-bezier(.2,.8,.2,1) both; }
@@ -549,8 +558,13 @@ const CSState = {
     if (!project.language) project.language = 'auto';
     if (!project.textOverlays) project.textOverlays = [];
     if (!project.captions) project.captions = [];
-    const styleDefaults = { fontWeight: 700, outlineWidth: 2, shadowIntensity: 60, bgOpacity: 55, lineSpacing: 1.3, animation: 'minimal-fade', animIntensity: 1, direction: 'ltr', gradient: null };
+    const styleDefaults = { fontWeight: 700, outlineWidth: 2, shadowIntensity: 60, bgOpacity: 55, lineSpacing: 1.3, animation: 'minimal-fade', animIntensity: 1, direction: 'ltr', gradient: null, activeBackground: null };
     project.style = Object.assign({}, styleDefaults, project.style || {});
+    // Projects saved before the professional template pack used a smaller
+    // set of preset ids — remap them so a card still shows as selected.
+    if (CSEngine.LEGACY_PRESET_MAP[project.style.preset]) {
+      project.style.preset = CSEngine.LEGACY_PRESET_MAP[project.style.preset];
+    }
     const fxDefaults = { overlay: 'none' };
     project.effects = Object.assign({}, fxDefaults, project.effects || {});
     (project.captions || []).forEach(c => {
@@ -577,20 +591,21 @@ const CSState = {
       captions: [],
       textOverlays: [],
       style: {
-        preset: 'clean',
+        preset: 'clean-pro',
         fontFamily: "'Inter', sans-serif",
-        fontWeight: 700,
+        fontWeight: 800,
         fontSize: 26,
         color: '#ffffff',
-        highlightColor: '#2fe1c2',
+        highlightColor: '#ffe45c',
         gradient: null,
+        activeBackground: null,
         outlineWidth: 2,
-        shadowIntensity: 60,
-        bgOpacity: 55,
+        shadowIntensity: 55,
+        bgOpacity: 0,
         position: 'bottom',
         align: 'center',
         lineSpacing: 1.3,
-        animation: 'minimal-fade',
+        animation: 'word-pop',
         animSpeed: 1,
         animIntensity: 1,
         background: false,
@@ -635,13 +650,70 @@ const CSEngine = {
       note: 'Experimental: there is no dedicated Hinglish mode in the speech model, so this runs auto-detect and may return Hindi script, English, or a mix.' }
   ],
 
+  // Legacy preset ids from before the professional template pack, mapped to
+  // their closest new equivalent so projects saved with the old 6 presets
+  // still show a selected card after this update.
+  LEGACY_PRESET_MAP: {
+    clean: 'clean-pro', boldhi: 'impact-yellow', sunset: 'sunset-gradient',
+    ocean: 'ocean-gradient', karaoke: 'karaoke-pro', neon: 'neon-cyan'
+  },
+
+  // Each preset is a *complete* caption design: font, text colour, highlight
+  // colour + how the highlight is shown (plain colour swap vs. a filled
+  // pill behind the active word), outline, shadow, background, and the
+  // word-level animation — matching CapCut-style "one tap, full look"
+  // templates rather than separate colour/animation pickers.
+  // `sample` is only used to animate the template picker's preview card.
   STYLE_PRESETS: [
-    { id: 'clean',   label: 'Clean White',   fontFamily: "'Inter', sans-serif",  fontWeight: 700, color: '#ffffff', highlightColor: '#ffffff', gradient: null, background: false, outline: true,  bgOpacity: 0,  animation: 'minimal-fade' },
-    { id: 'boldhi',  label: 'Bold Yellow',   fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#ffd166', gradient: null, background: true,  outline: true,  bgOpacity: 60, animation: 'word-pop' },
-    { id: 'sunset',  label: 'Sunset Gradient', fontFamily: "'Inter', sans-serif", fontWeight: 800, color: '#ffffff', highlightColor: '#ffffff', gradient: { from: '#ff5f6d', to: '#ffd166' }, background: false, outline: true, bgOpacity: 0, animation: 'soft-bounce' },
-    { id: 'ocean',   label: 'Ocean Gradient', fontFamily: "'Inter', sans-serif", fontWeight: 800, color: '#ffffff', highlightColor: '#ffffff', gradient: { from: '#2fe1c2', to: '#8c7bff' }, background: false, outline: true, bgOpacity: 0, animation: 'smooth-slide' },
-    { id: 'karaoke', label: 'Karaoke',        fontFamily: "'Inter', sans-serif",  fontWeight: 700, color: '#ffffff', highlightColor: '#2fe1c2', gradient: null, background: false, outline: true,  bgOpacity: 0,  animation: 'karaoke-highlight' },
-    { id: 'neon',    label: 'Neon Glow',      fontFamily: "'Inter', sans-serif",  fontWeight: 800, color: '#ffffff', highlightColor: '#8c7bff', gradient: null, background: false, outline: true,  bgOpacity: 0,  animation: 'glow-pulse' }
+    { id: 'clean-pro', label: 'Clean Pro', fontFamily: "'Inter', sans-serif", fontWeight: 800,
+      color: '#ffffff', highlightColor: '#ffe45c', gradient: null, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 2, shadowIntensity: 55,
+      animation: 'word-pop', sample: ['Stop', 'scrolling', 'watch', 'this'] },
+
+    { id: 'karaoke-pro', label: 'Karaoke Pro', fontFamily: "'Inter', sans-serif", fontWeight: 800,
+      color: '#ffffff', highlightColor: '#0b1613', gradient: null, activeBackground: '#49e6c1',
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 2, shadowIntensity: 50,
+      animation: 'karaoke-highlight', sample: ['Sing', 'along', 'with', 'me'] },
+
+    { id: 'impact-yellow', label: 'Impact Yellow', fontFamily: "'Inter', sans-serif", fontWeight: 900,
+      color: '#ffffff', highlightColor: '#ffd400', gradient: null, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 5, shadowIntensity: 70,
+      animation: 'emphasis-punch', sample: ['THIS', 'CHANGES', 'EVERYTHING'] },
+
+    { id: 'minimal-white', label: 'Minimal White', fontFamily: "'Inter', sans-serif", fontWeight: 650,
+      color: '#ffffff', highlightColor: '#ffffff', gradient: null, activeBackground: null,
+      background: true, bgOpacity: 30, outline: false, outlineWidth: 0, shadowIntensity: 30,
+      animation: 'minimal-fade', sample: ['Simple', 'clean', 'and', 'readable'] },
+
+    { id: 'cinematic', label: 'Cinematic', fontFamily: "Georgia, 'Cabin', serif", fontWeight: 700,
+      color: '#fff7e6', highlightColor: '#e7c98b', gradient: null, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 3, shadowIntensity: 75,
+      animation: 'smooth-slide', sample: ['Every', 'story', 'has', 'a', 'beginning'] },
+
+    { id: 'gaming-red', label: 'Gaming Red', fontFamily: "'Inter', sans-serif", fontWeight: 900,
+      color: '#ffffff', highlightColor: '#ff4d67', gradient: null, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 4, shadowIntensity: 65,
+      animation: 'word-pop', sample: ['EPIC', 'CLUTCH', 'WIN'] },
+
+    { id: 'neon-cyan', label: 'Neon Cyan', fontFamily: "'Inter', sans-serif", fontWeight: 850,
+      color: '#ffffff', highlightColor: '#55f5ff', gradient: null, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 2, shadowIntensity: 40,
+      animation: 'glow-pulse', sample: ['Glow', 'up', 'your', 'edits'] },
+
+    { id: 'sunset-gradient', label: 'Sunset Gradient', fontFamily: "'Inter', sans-serif", fontWeight: 800,
+      color: '#ffffff', highlightColor: '#ffffff', gradient: { from: '#ff5f6d', to: '#ffd166' }, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 2, shadowIntensity: 55,
+      animation: 'soft-bounce', sample: ['Golden', 'hour', 'vibes'] },
+
+    { id: 'ocean-gradient', label: 'Ocean Gradient', fontFamily: "'Inter', sans-serif", fontWeight: 800,
+      color: '#ffffff', highlightColor: '#ffffff', gradient: { from: '#2fe1c2', to: '#8c7bff' }, activeBackground: null,
+      background: false, bgOpacity: 0, outline: true, outlineWidth: 2, shadowIntensity: 55,
+      animation: 'smooth-slide', sample: ['Calm', 'cool', 'collected'] },
+
+    { id: 'urdu-elegant', label: 'Urdu Elegant', fontFamily: "'Amiri', serif", fontWeight: 700,
+      color: '#ffffff', highlightColor: '#f6d365', gradient: null, activeBackground: null,
+      background: true, bgOpacity: 20, outline: true, outlineWidth: 2, shadowIntensity: 60,
+      animation: 'smooth-slide', direction: 'rtl', sample: ['خوبصورت', 'الفاظ', 'یہاں'] }
   ],
 
   ANIMATION_PRESETS: [
@@ -1307,21 +1379,29 @@ const CSStyles = {
 
   style() { return CSState.current.style; },
 
+  // Each card shows a live, looping, word-timed caption preview built from
+  // the exact same renderer as the real video overlay (renderCaptionInto /
+  // updateAnimatedCaption), just fed a fake ~2.4s "segment" and a style
+  // object taken straight from the preset instead of the project's current
+  // style. That's what makes the card an actual preview of the template
+  // rather than a static swatch.
+  PREVIEW_WORD_DURATION: 0.6,
+
   buildPresetGrid() {
     const grid = document.getElementById('preset-grid');
     grid.innerHTML = '';
+    this._previewCards = [];
     CSEngine.STYLE_PRESETS.forEach(p => {
       const card = document.createElement('div');
       card.className = 'preset-card' + (this.style().preset === p.id ? ' selected' : '');
-      const swatchStyle = p.gradient
-        ? `background:linear-gradient(90deg, ${p.gradient.from}, ${p.gradient.to}); -webkit-background-clip:text; background-clip:text; color:transparent;`
-        : `color:${p.color};`;
-      card.innerHTML = `<span class="preset-preview" style="font-family:${p.fontFamily}; font-weight:${p.fontWeight}; ${swatchStyle}">Aa</span><span class="preset-label">${p.label}</span>`;
+      card.innerHTML = `<div class="preset-mini-frame" dir="${p.direction || 'ltr'}"></div><span class="preset-label">${p.label}</span>`;
       card.addEventListener('click', () => {
         Object.assign(this.style(), {
           preset: p.id, fontFamily: p.fontFamily, fontWeight: p.fontWeight, color: p.color,
-          highlightColor: p.highlightColor, gradient: p.gradient, background: p.background,
-          outline: p.outline, bgOpacity: p.bgOpacity, animation: p.animation
+          highlightColor: p.highlightColor, gradient: p.gradient, activeBackground: p.activeBackground,
+          background: p.background, bgOpacity: p.bgOpacity, outline: p.outline,
+          outlineWidth: p.outlineWidth, shadowIntensity: p.shadowIntensity, animation: p.animation,
+          direction: p.direction || CSState.current.style.direction
         });
         document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
@@ -1330,7 +1410,45 @@ const CSStyles = {
         this.forceRerender();
       });
       grid.appendChild(card);
+      const words = p.sample.map((text, i) => ({
+        text, start: i * this.PREVIEW_WORD_DURATION, end: (i + 1) * this.PREVIEW_WORD_DURATION
+      }));
+      this._previewCards.push({
+        preset: p, container: card.querySelector('.preset-mini-frame'), words,
+        loopLen: words.length * this.PREVIEW_WORD_DURATION + 0.5, lastLoopT: -1
+      });
     });
+    this.startPresetPreviewLoop();
+  },
+
+  // One shared rAF loop drives every card (they all stay in phase, which
+  // reads as a clean synchronized demo instead of N independent timers
+  // draining battery on a phone).
+  startPresetPreviewLoop() {
+    if (this._previewLoopRunning) return;
+    this._previewLoopRunning = true;
+    const tick = () => {
+      const stylePanel = document.getElementById('panel-style');
+      if (!stylePanel || !document.body.contains(stylePanel)) { this._previewLoopRunning = false; return; }
+      if (stylePanel.classList.contains('active') && this._previewCards) {
+        const now = performance.now() / 1000;
+        this._previewCards.forEach(pc => {
+          const t = now % pc.loopLen;
+          const fakeSeg = { start: 0, end: pc.loopLen, words: pc.words };
+          if (t < pc.lastLoopT) {
+            // loop restarted — rebuild so entrance animations replay
+            this.renderCaptionInto(pc.container, fakeSeg, t, pc.preset, pc.words);
+          } else if (!pc.container.querySelector('.cap-box')) {
+            this.renderCaptionInto(pc.container, fakeSeg, t, pc.preset, pc.words);
+          } else {
+            this.updateAnimatedCaption(pc.container, fakeSeg, t, pc.preset, pc.words);
+          }
+          pc.lastLoopT = t;
+        });
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   },
 
   buildCustomizeToggle() {
@@ -1354,6 +1472,7 @@ const CSStyles = {
         <select class="select-input" id="ctl-font">
           <option value="'Inter', sans-serif">Inter (Latin)</option>
           <option value="'Cabin', sans-serif">Cabin (Latin)</option>
+          <option value="Georgia, 'Cabin', serif">Georgia (Latin, serif)</option>
           <option value="'Amiri', serif">Amiri (Urdu script)</option>
           <option value="'Noto Kufi Arabic', sans-serif">Noto Kufi Arabic (Urdu script)</option>
           <option value="'Lohit Devanagari', sans-serif">Lohit Devanagari (Hindi)</option>
@@ -1541,64 +1660,74 @@ const CSStyles = {
     if (this.style().position === 'middle') overlay.classList.add('pos-middle');
   },
 
-  boxStyleAttr() {
-    const s = this.style();
+  boxStyleAttr(s) {
+    s = s || this.style();
     const bg = s.background ? `background:rgba(10,10,14,${(s.bgOpacity / 100).toFixed(2)}); padding:8px 14px; border-radius:8px;` : '';
     const shadowBlur = Math.round((s.shadowIntensity / 100) * 10);
     const shadow = s.outline && shadowBlur > 0 ? `text-shadow:0 2px ${shadowBlur}px rgba(0,0,0,.85), 0 0 ${s.outlineWidth}px rgba(0,0,0,.9);` : '';
-    const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[s.align];
-    return `font-family:${s.fontFamily}; font-weight:${s.fontWeight}; font-size:${s.fontSize}px; line-height:${s.lineSpacing}; text-align:${s.align}; justify-content:${justify}; ${bg} ${shadow}`;
+    const justify = { left: 'flex-start', center: 'center', right: 'flex-end' }[s.align || 'center'];
+    return `font-family:${s.fontFamily}; font-weight:${s.fontWeight}; font-size:${s.fontSize || 20}px; line-height:${s.lineSpacing || 1.25}; text-align:${s.align || 'center'}; justify-content:${justify}; ${bg} ${shadow}`;
   },
 
-  wordStyleAttr() {
-    const s = this.style();
+  wordStyleAttr(s) {
+    s = s || this.style();
     if (s.gradient) {
       return `background-image:linear-gradient(90deg, ${s.gradient.from}, ${s.gradient.to}); -webkit-background-clip:text; background-clip:text; color:transparent;`;
     }
     return `color:${s.color};`;
   },
 
-  // Build the caption box fresh whenever a new segment becomes active
-  renderCaptionInto(container, seg, t) {
-    const s = this.style();
+  // Build the caption box fresh whenever a new segment becomes active.
+  // styleOverride/wordsOverride let the template-picker previews reuse this
+  // exact same renderer with a preset's style instead of the live project
+  // style — one code path for both the real overlay and the picker cards.
+  renderCaptionInto(container, seg, t, styleOverride, wordsOverride) {
+    const s = styleOverride || this.style();
     const lang = CSEngine.langInfo(CSState.current.language);
-    const words = CSEngine.getWords(seg);
+    const dir = s.direction || lang.dir;
+    const words = wordsOverride || CSEngine.getWords(seg);
+    const isPreview = !!styleOverride;
 
-    container.innerHTML = `<div class="cap-box" dir="${lang.dir}" style="--caption-color:${s.color}; --caption-highlight:${s.highlightColor}; display:inline-flex; flex-wrap:wrap; gap:.3em; ${this.boxStyleAttr()}"></div>`;
+    container.innerHTML = `<div class="cap-box" dir="${dir}" style="--caption-color:${s.color}; --caption-highlight:${s.highlightColor}; display:inline-flex; flex-wrap:wrap; gap:.3em; ${this.boxStyleAttr(s)}"></div>`;
     const box = container.querySelector('.cap-box');
 
     const animClass = 'cs-' + s.animation;
-    const wordStyle = this.wordStyleAttr();
+    const wordStyle = this.wordStyleAttr(s);
     words.forEach((w, i) => {
       const span = document.createElement('span');
       span.className = `caption-word ${animClass}`;
       span.style.cssText = wordStyle;
       span.textContent = w.text;
       span.dataset.idx = i;
-      const delaySec = Math.max(0, (w.start - t) / Math.max(0.1, s.animSpeed));
+      const delaySec = Math.max(0, (w.start - t) / Math.max(0.1, s.animSpeed || 1));
       span.style.animationDelay = `${delaySec}s`;
       box.appendChild(span);
     });
 
-    this._words = words;
-    this.activeWordIdx = -1;
-    this.updateAnimatedCaption(container, seg, t);
+    if (isPreview) { container.__previewActiveIdx = -1; } else { this._words = words; this.activeWordIdx = -1; }
+    this.updateAnimatedCaption(container, seg, t, styleOverride, words);
   },
 
   // Called every frame: toggles which word is "active" without re-creating
-  // spans (so pop/slide/bounce entrance animations aren't restarted).
-  updateAnimatedCaption(container, seg, t) {
+  // spans (so pop/slide/bounce entrance animations aren't restarted), and
+  // applies the highlight colour / pill to whichever word is active — this
+  // runs for every animation preset, not just Karaoke, so "Highlight color"
+  // is a real, visible part of every template.
+  updateAnimatedCaption(container, seg, t, styleOverride, wordsOverride) {
     const box = container.querySelector('.cap-box');
     if (!box) return;
-    const words = this._words || CSEngine.getWords(seg);
-    const s = this.style();
+    const isPreview = !!styleOverride;
+    const s = styleOverride || this.style();
+    const words = wordsOverride || this._words || CSEngine.getWords(seg);
     const idx = CSEngine.activeWordIndex(words, t);
-    if (idx === this.activeWordIdx) return;
-    this.activeWordIdx = idx;
+    const prevIdx = isPreview ? container.__previewActiveIdx : this.activeWordIdx;
+    if (idx === prevIdx) return;
+    if (isPreview) container.__previewActiveIdx = idx; else this.activeWordIdx = idx;
 
     box.querySelectorAll('.caption-word').forEach((el, i) => {
       const isActive = i === idx;
       el.classList.toggle('is-active', isActive);
+      this.applyActiveWordVisuals(el, s, isActive);
       if (isActive && s.animation === 'emphasis-punch') {
         el.style.animation = 'none';
         el.style.animationDelay = '0s';
@@ -1606,6 +1735,37 @@ const CSStyles = {
         el.style.animation = '';
       }
     });
+  },
+
+  // Sets/clears the highlight colour and optional active-word pill
+  // background directly on the element's inline style so it always wins
+  // over the base colour/gradient rule, for every animation preset.
+  applyActiveWordVisuals(el, s, isActive) {
+    el.classList.toggle('is-active-pill', isActive && !!s.activeBackground);
+    if (isActive) {
+      if (s.activeBackground) {
+        el.style.backgroundColor = s.activeBackground;
+        el.style.color = this.contrastTextColor(s.activeBackground);
+      } else if (!s.gradient) {
+        el.style.backgroundColor = '';
+        el.style.color = s.highlightColor || s.color;
+      } else {
+        el.style.backgroundColor = '';
+      }
+    } else {
+      el.style.backgroundColor = '';
+      if (!s.gradient) el.style.color = s.color;
+    }
+  },
+
+  // Cheap luminance check so text drawn on a highlight pill (e.g. a bright
+  // teal or yellow) stays readable instead of defaulting to white-on-white.
+  contrastTextColor(hex) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!m) return '#111111';
+    const [r, g, b] = [m[1], m[2], m[3]].map(h => parseInt(h, 16));
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? '#111111' : '#ffffff';
   }
 };
 
@@ -2161,212 +2321,4 @@ const CSExport = {
       const drawFrame = () => {
         if (stopped) return;
         const t = renderVideo.currentTime;
-        this.drawComposite(ctx, renderVideo, w, h, t, duration);
-        CSExport.setProgress(Math.min(65, (t / duration) * 65), `Rendering ${Math.floor(t)}s / ${Math.floor(duration)}s`);
-        if (t >= duration - 0.05 || renderVideo.ended) {
-          finish();
-        } else {
-          renderVideo.requestVideoFrameCallback ? renderVideo.requestVideoFrameCallback(drawFrame) : requestAnimationFrame(drawFrame);
-        }
-      };
-
-      renderVideo.onended = finish;
-      recorder.start();
-      renderVideo.currentTime = 0;
-      try {
-        await renderVideo.play();
-      } catch (e) {
-        reject(new Error('could not start playback for export: ' + e.message));
-        return;
-      }
-      // Some browsers only expose the audio track once playback has begun
-      if (!audioTracks.length) {
-        try {
-          const audioStream = renderVideo.captureStream();
-          audioStream.getAudioTracks().forEach(tr => combined.addTrack(tr));
-        } catch (e) {}
-      }
-      drawFrame();
-
-      // Safety timeout in case 'ended' never fires
-      setTimeout(finish, (duration + 3) * 1000);
-    });
-  },
-
-  drawComposite(ctx, video, w, h, t, duration) {
-    const f = CSState.current.effects;
-    const s = CSState.current.style;
-
-    ctx.save();
-    ctx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%)`;
-
-    let scale = 1;
-    if (f.zoom) scale = 1 + 0.08 * (t / duration);
-    const dw = w * scale, dh = h * scale;
-    const dx = (w - dw) / 2, dy = (h - dh) / 2;
-
-    let alpha = 1;
-    if (f.fadeIn && t < 0.6) alpha = t / 0.6;
-    if (f.fadeOut && t > duration - 0.6) alpha = Math.min(alpha, (duration - t) / 0.6);
-    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-
-    ctx.drawImage(video, dx, dy, dw, dh);
-    ctx.restore();
-    ctx.globalAlpha = 1;
-
-    if (f.overlay === 'sparkle' && this.overlayImg) {
-      const size = w * 0.14;
-      ctx.drawImage(this.overlayImg, w - size - w * 0.04, h * 0.04, size, size);
-    }
-
-    const seg = CSState.current.captions.find(c => t >= c.start && t <= c.end);
-    if (seg) this.drawCaption(ctx, seg, t, w, h, s, f);
-
-    this.drawTextOverlays(ctx, t, w, h);
-  },
-
-  // Same word-timing + preset math as the live DOM preview (js/engine.js),
-  // reproduced numerically here since canvas recording can't play real CSS
-  // keyframe animations directly.
-  drawCaption(ctx, seg, t, w, h, s, f) {
-    const words = CSEngine.getWords(seg);
-    if (!words.length) return;
-    const lang = CSEngine.langInfo(CSState.current.language);
-    const isRTL = lang.dir === 'rtl';
-    const fontSize = s.fontSize * (w / 720);
-    const weight = s.fontWeight || 700;
-    const fontName = (s.fontFamily || "'Inter'").replace(/'/g, '');
-    ctx.font = `${weight} ${fontSize}px ${fontName}`;
-    ctx.textBaseline = 'middle';
-    ctx.direction = isRTL ? 'rtl' : 'ltr';
-
-    const activeIdx = CSEngine.activeWordIndex(words, t);
-    const layoutWords = isRTL ? [...words].reverse() : words;
-    const idxMap = isRTL ? layoutWords.map((_, i) => words.length - 1 - i) : layoutWords.map((_, i) => i);
-
-    const maxWidth = w * 0.88;
-    const spaceWidth = ctx.measureText(' ').width;
-    const lines = [[]];
-    let lineWidth = 0;
-    layoutWords.forEach((word, li) => {
-      const wordWidth = ctx.measureText(word.text).width;
-      if (lineWidth + wordWidth > maxWidth && lines[lines.length - 1].length) {
-        lines.push([]);
-        lineWidth = 0;
-      }
-      lines[lines.length - 1].push({ text: word.text, origIdx: idxMap[li], start: word.start, width: wordWidth });
-      lineWidth += wordWidth + spaceWidth;
-    });
-
-    const lineStep = fontSize * (s.lineSpacing || 1.3);
-    const totalHeight = lines.length * lineStep;
-    let baseY;
-    if (s.position === 'top') baseY = h * 0.1 + totalHeight / 2;
-    else if (s.position === 'middle') baseY = h * 0.5;
-    else baseY = h * 0.88 - totalHeight / 2;
-
-    const shadowBlur = Math.round((s.shadowIntensity / 100) * 10);
-
-    lines.forEach((line, li) => {
-      const y = baseY + li * lineStep;
-      const totalLineWidth = line.reduce((a, wd) => a + wd.width, 0) + spaceWidth * (line.length - 1);
-      let x;
-      if (s.align === 'left') x = w * 0.06;
-      else if (s.align === 'right') x = w - w * 0.06 - totalLineWidth;
-      else x = (w - totalLineWidth) / 2;
-
-      if (s.background) {
-        ctx.fillStyle = `rgba(10,10,14,${(s.bgOpacity / 100).toFixed(2)})`;
-        ctx.fillRect(x - 10, y - fontSize * 0.7, totalLineWidth + 20, fontSize * 1.3);
-      }
-
-      line.forEach(wd => {
-        const isActive = wd.origIdx === activeIdx;
-        const localSec = Math.max(0, t - wd.start);
-        const anim = CSEngine.wordTransform(s.animation, localSec, s.animSpeed, s.animIntensity);
-
-        let color = s.color;
-        if (s.animation === 'karaoke-highlight' && isActive) color = s.highlightColor;
-
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, Math.min(1, anim.opacity));
-        if (s.outline && shadowBlur > 0) {
-          ctx.shadowColor = 'rgba(0,0,0,0.85)';
-          ctx.shadowBlur = shadowBlur;
-        }
-        if (s.animation === 'glow-pulse' && isActive && anim.glow > 0) {
-          ctx.shadowColor = s.highlightColor;
-          ctx.shadowBlur = Math.max(shadowBlur, anim.glow);
-        }
-
-        const cx = x + wd.width / 2;
-        const cy = y + (anim.translateY || 0);
-        ctx.translate(cx, cy);
-        ctx.scale(anim.scale || 1, anim.scale || 1);
-        if (s.gradient && !(s.animation === 'karaoke-highlight' && isActive)) {
-          const grad = ctx.createLinearGradient(-wd.width / 2, 0, wd.width / 2, 0);
-          grad.addColorStop(0, s.gradient.from);
-          grad.addColorStop(1, s.gradient.to);
-          ctx.fillStyle = grad;
-        } else {
-          ctx.fillStyle = color;
-        }
-        ctx.fillText(wd.text, -wd.width / 2, 0);
-        ctx.restore();
-
-        x += wd.width + spaceWidth;
-      });
-    });
-  },
-
-  drawTextOverlays(ctx, t, w, h) {
-    const items = (CSState.current.textOverlays || []).filter(o => t >= o.start && t <= o.end);
-    items.forEach(o => {
-      const localSec = t - o.start;
-      let alpha = 1, ty = 0;
-      if (o.entrance === 'fade') alpha = Math.min(1, localSec / 0.3);
-      if (o.entrance === 'slide') { alpha = Math.min(1, localSec / 0.3); ty = (1 - Math.min(1, localSec / 0.3)) * 16; }
-      const fontSize = o.fontSize * (w / 720);
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-      ctx.font = `700 ${fontSize}px ${(o.fontFamily || "'Inter'").replace(/'/g, '')}`;
-      ctx.textAlign = o.align || 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = 'rgba(0,0,0,0.7)';
-      ctx.shadowBlur = 6;
-      ctx.fillStyle = o.color;
-      ctx.fillText(o.text, (o.x / 100) * w, (o.y / 100) * h + ty);
-      ctx.restore();
-    });
-  },
-
-  async preloadOverlayImage() {
-    const type = CSState.current.effects.overlay;
-    if (type === 'none') { this.overlayImg = null; return; }
-    const svg = type === 'sparkle' ? CSEffects.SVG_SPARKLE : CSEffects.SVG_SWOOSH;
-    const colored = svg.replace('<svg ', `<svg style="color:${CSState.current.style.highlightColor}" `);
-    const img = new Image();
-    await new Promise((resolve) => {
-      img.onload = resolve;
-      img.onerror = resolve;
-      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(colored)));
-    });
-    this.overlayImg = img;
-  },
-
-  // ---------- Step 2: transcode webm -> mp4 with ffmpeg.wasm ----------
-  async transcodeToMp4(webmBlob) {
-    const ffmpeg = await CSTranscribe.getFFmpeg();
-    ffmpeg.FS('writeFile', 'export_in.webm', await FFmpeg.fetchFile(webmBlob));
-    await ffmpeg.run('-i', 'export_in.webm', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-c:a', 'aac', 'export_out.mp4');
-    const data = ffmpeg.FS('readFile', 'export_out.mp4');
-    try { ffmpeg.FS('unlink', 'export_in.webm'); ffmpeg.FS('unlink', 'export_out.mp4'); } catch (e) {}
-    return new Blob([data.buffer], { type: 'video/mp4' });
-  }
-};
-
-document.addEventListener('DOMContentLoaded', () => CSExport.init());
-
-</script>
-</body>
-</html>
+        this.drawComposite(ctx, renderVideo,
